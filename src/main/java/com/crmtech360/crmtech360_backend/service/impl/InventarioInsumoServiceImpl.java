@@ -47,6 +47,7 @@ public class InventarioInsumoServiceImpl implements InventarioInsumoService {
         Insumo insumo = insumoRepository.findById(createRequestDTO.getIdInsumo())
                 .orElseThrow(() -> new ResourceNotFoundException("Insumo", "id", createRequestDTO.getIdInsumo()));
 
+        // Este método findByUbicacionInventarioAndInsumo debe devolver Optional<InventarioInsumo>
         inventarioInsumoRepository.findByUbicacionInventarioAndInsumo(createRequestDTO.getUbicacionInventario(), insumo)
                 .ifPresent(existing -> {
                     throw new DuplicateResourceException("InventarioInsumo", "ubicacion/insumo", createRequestDTO.getUbicacionInventario() + "/" + insumo.getIdInsumo());
@@ -56,6 +57,8 @@ public class InventarioInsumoServiceImpl implements InventarioInsumoService {
         inventario.setInsumo(insumo);
         inventario.setUbicacionInventario(createRequestDTO.getUbicacionInventario());
         inventario.setCantidadStock(createRequestDTO.getCantidadStock());
+        // Aquí podrías establecer el umbral mínimo de stock si se proporciona en el DTO de creación
+        // inventario.setUmbralMinimoStock(createRequestDTO.getUmbralMinimoStock());
 
         InventarioInsumo savedInventario = inventarioInsumoRepository.save(inventario);
         log.info("Registro de inventario insumo creado con ID {}", savedInventario.getIdInventarioInsumo());
@@ -83,6 +86,7 @@ public class InventarioInsumoServiceImpl implements InventarioInsumoService {
         log.info("Buscando inventario para insumo ID {} en ubicación '{}'", idInsumo, ubicacion);
         Insumo insumo = insumoRepository.findById(idInsumo)
                 .orElseThrow(() -> new ResourceNotFoundException("Insumo", "id", idInsumo));
+        // Este método findByUbicacionInventarioAndInsumo debe devolver Optional<InventarioInsumo>
         InventarioInsumo inventario = inventarioInsumoRepository.findByUbicacionInventarioAndInsumo(ubicacion, insumo)
                 .orElseThrow(() -> new ResourceNotFoundException("InventarioInsumo", "insumo/ubicacion", idInsumo + "/" + ubicacion));
         return mapToResponseDTO(inventario);
@@ -150,6 +154,7 @@ public class InventarioInsumoServiceImpl implements InventarioInsumoService {
         if (!insumoRepository.existsById(idInsumo)) {
             throw new ResourceNotFoundException("Insumo", "id", idInsumo);
         }
+        // Esta línea ahora debería funcionar si el repositorio devuelve List<InventarioInsumo>
         List<InventarioInsumo> inventarios = inventarioInsumoRepository.findByInsumoIdInsumo(idInsumo);
         return inventarios.stream().map(this::mapToResponseDTO).collect(Collectors.toList());
     }
