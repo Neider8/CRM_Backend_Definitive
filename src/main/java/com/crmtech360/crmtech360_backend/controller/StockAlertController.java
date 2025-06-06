@@ -70,7 +70,8 @@ public class StockAlertController {
             @ApiResponse(responseCode = "403", description = "Prohibido - El usuario no tiene los permisos necesarios.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class)))
     })
-    @GetMapping
+    // CORRECCIÓN: Se añade "/active" para que coincida con la llamada del frontend.
+    @GetMapping("/active")
     @PreAuthorize("hasAnyRole('GERENTE', 'ADMINISTRADOR', 'OPERARIO')")
     public ResponseEntity<List<StockAlertDTO>> getActiveAlerts() {
         logger.info("Solicitud para obtener todas las alertas de stock activas.");
