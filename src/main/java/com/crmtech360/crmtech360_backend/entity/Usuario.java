@@ -29,6 +29,9 @@ public class Usuario {
     @Column(name = "rol_usuario", nullable = false, length = 20)
     private String rolUsuario; // 'Administrador', 'Gerente', 'Operario', 'Ventas'
 
+    @Column(name = "habilitado", nullable = false) // Campo para el estado de habilitación
+    private boolean habilitado;
+
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 
@@ -37,18 +40,25 @@ public class Usuario {
 
     // Constructores
     public Usuario() {
+        // Al crear un usuario, por defecto se asume que está habilitado si no se especifica.
+        // Esto coincide con el DEFAULT true en la definición de la tabla.
+        this.habilitado = true;
     }
 
-    public Usuario(Empleado empleado, String nombreUsuario, String contrasena, String rolUsuario) {
+    public Usuario(Empleado empleado, String nombreUsuario, String contrasena, String rolUsuario, boolean habilitado) {
         this.empleado = empleado;
         this.nombreUsuario = nombreUsuario;
         this.contrasena = contrasena; // La contraseña debe ser hasheada antes de persistir
         this.rolUsuario = rolUsuario;
+        this.habilitado = habilitado;
     }
 
     @PrePersist
     protected void onCreate() {
         fechaCreacion = LocalDateTime.now();
+        if (this.habilitado == false) { // Si por alguna razón no se setea a true en el constructor, se asegura aquí.
+            this.habilitado = true;
+        }
     }
 
     @PreUpdate
@@ -95,6 +105,15 @@ public class Usuario {
 
     public void setRolUsuario(String rolUsuario) {
         this.rolUsuario = rolUsuario;
+    }
+
+    // Getter y Setter para 'habilitado'
+    public boolean isHabilitado() {
+        return habilitado;
+    }
+
+    public void setHabilitado(boolean habilitado) {
+        this.habilitado = habilitado;
     }
 
     public LocalDateTime getFechaCreacion() {
@@ -147,7 +166,11 @@ public class Usuario {
                 "idUsuario=" + idUsuario +
                 ", empleadoId=" + (empleado != null ? empleado.getIdEmpleado() : "null") +
                 ", nombreUsuario='" + nombreUsuario + '\'' +
+                ", contrasena='[PROTECTED]'" + // No mostrar la contraseña en el toString
                 ", rolUsuario='" + rolUsuario + '\'' +
+                ", habilitado=" + habilitado +
+                ", fechaCreacion=" + fechaCreacion +
+                ", fechaActualizacion=" + fechaActualizacion +
                 '}';
     }
 }

@@ -2,7 +2,7 @@ package com.crmtech360.crmtech360_backend.service.impl;
 
 import com.crmtech360.crmtech360_backend.entity.Permiso;
 import com.crmtech360.crmtech360_backend.entity.RolPermiso;
-import com.crmtech360.crmtech360_backend.entity.Usuario;
+import com.crmtech360.crmtech360_backend.entity.Usuario; // Asegúrate de que esta importación sea correcta
 import com.crmtech360.crmtech360_backend.repository.RolPermisoRepository;
 import com.crmtech360.crmtech360_backend.repository.UsuarioRepository;
 import org.slf4j.Logger;
@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User; // Correct import
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Service("userDetailsService") // Nombre explícito del bean
+@Service("userDetailsService")
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private static final Logger log = LoggerFactory.getLogger(UserDetailsServiceImpl.class);
@@ -47,7 +47,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                     return new UsernameNotFoundException("Usuario no encontrado con nombre de usuario: " + username);
                 });
 
-        log.info("Usuario encontrado: {}, Rol: {}", usuario.getNombreUsuario(), usuario.getRolUsuario());
+        log.info("Usuario encontrado: {}, Rol: {}, Habilitado: {}",
+                usuario.getNombreUsuario(), usuario.getRolUsuario(), usuario.isHabilitado()); // Log el estado habilitado
 
         Set<GrantedAuthority> authorities = new HashSet<>();
 
@@ -62,14 +63,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         // 2. Añadir PERMISOS específicos asociados al rol del usuario.
         if (usuario.getRolUsuario() != null && !usuario.getRolUsuario().trim().isEmpty()) {
-            // Usar un método que haga JOIN FETCH para evitar N+1 si es posible,
-            // o asegurar que la carga LAZY funcione dentro de la transacción.
-            // El método findByRolNombre en RolPermisoRepository debería cargar los Permisos.
-            // Si RolPermiso.permiso es LAZY, la transacción @Transactional(readOnly = true) lo manejará.
-            // Alternativamente, RolPermisoRepository puede tener un método específico con JOIN FETCH.
-            // Voy a asumir que tu `RolPermisoRepository.findByRolNombre` funciona bien en este contexto transaccional
-            // o que tienes un método como `findByRolNombreWithPermisos` (que has añadido en una versión posterior del repo).
-            // Aquí usaré findByRolNombreWithPermisos para ser explícito.
             List<RolPermiso> rolesPermisos = rolPermisoRepository.findByRolNombreWithPermisos(usuario.getRolUsuario());
             if (rolesPermisos.isEmpty()) {
                 log.info("El rol '{}' para el usuario '{}' no tiene permisos específicos asignados en la tabla RolesPermisos.", usuario.getRolUsuario(), username);
@@ -94,16 +87,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             log.warn("El usuario '{}' no tiene roles ni permisos asignados. La autenticación podría funcionar pero la autorización fallará para recursos protegidos.", username);
         }
 
-        // Los flags booleanos indican el estado de la cuenta.
-        // Por ahora, los asumimos como true. Podrías tener campos en tu entidad Usuario
-        // para manejar esto (ej. isEnabled, isAccountNonExpired, etc.)
+        // Usamos el estado 'habilitado' del usuario de la base de datos
         return new User(
                 usuario.getNombreUsuario(),
-                usuario.getContrasena(), // La contraseña ya debe estar codificada en la BD
-                true, // enabled
-                true, // accountNonExpired
-                true, // credentialsNonExpired
-                true, // accountNonLocked
+                usuario.getContrasena(),
+                usuario.isHabilitado(), // <--- CAMBIADO: Usar el valor del campo 'habilitado' de la entidad Usuario
+                true, // accountNonExpired (Puedes añadir un campo para esto si lo necesitas)
+                true, // credentialsNonExpired (Puedes añadir un campo para esto si lo necesitas)
+                true, // accountNonLocked (Puedes añadir un campo para esto si lo necesitas)
                 authorities
         );
     }

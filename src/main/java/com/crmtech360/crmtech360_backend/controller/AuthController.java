@@ -7,7 +7,7 @@ import com.crmtech360.crmtech360_backend.dto.UsuarioCreateRequestDTO;
 import com.crmtech360.crmtech360_backend.dto.UsuarioResponseDTO;
 import com.crmtech360.crmtech360_backend.security.jwt.JwtUtil;
 import com.crmtech360.crmtech360_backend.service.UsuarioService;
-import com.crmtech360.crmtech360_backend.service.impl.UserDetailsServiceImpl; // Necesario para la inyección en el constructor
+import com.crmtech360.crmtech360_backend.service.impl.UserDetailsServiceImpl;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -23,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException; // Importar DisabledException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -52,7 +53,7 @@ public class AuthController {
     public AuthController(AuthenticationManager authenticationManager,
                           JwtUtil jwtUtil,
                           UsuarioService usuarioService,
-                          UserDetailsServiceImpl userDetailsServiceImpl) { // Spring usa userDetailsServiceImpl para configurar el AuthenticationManager
+                          UserDetailsServiceImpl userDetailsServiceImpl) {
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
         this.usuarioService = usuarioService;
@@ -66,7 +67,7 @@ public class AuthController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = JwtResponseDTO.class))),
             @ApiResponse(responseCode = "400", description = "Solicitud de login inválida (ej. campos vacíos).",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "401", description = "Credenciales inválidas (no autorizado).",
+            @ApiResponse(responseCode = "401", description = "Credenciales inválidas (no autorizado) o usuario no habilitado.", // <--- Actualizar descripción
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
             @ApiResponse(responseCode = "500", description = "Error interno del servidor durante la autenticación.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class)))
@@ -84,16 +85,25 @@ public class AuthController {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            String jwt = jwtUtil.generateTokenFromUserDetails(userDetails);
 
+            // *** Obtener el estado 'habilitado' del usuario ***
             UsuarioResponseDTO usuarioInfo = usuarioService.findUsuarioByNombreUsuario(userDetails.getUsername());
+
+            // Si el usuario no está habilitado, lanzar una excepción
+            if (!usuarioInfo.isHabilitado()) { // Asumiendo que UsuarioResponseDTO tiene un método isHabilitado()
+                log.warn("Intento de login fallido: El usuario {} no está habilitado.", userDetails.getUsername());
+                throw new DisabledException("Su usuario no está habilitado. Por favor, contacte a soporte.");
+            }
+
+            String jwt = jwtUtil.generateTokenFromUserDetails(userDetails);
 
             log.info("Usuario {} autenticado exitosamente. Token generado.", userDetails.getUsername());
             return ResponseEntity.ok(new JwtResponseDTO(
                     jwt,
                     usuarioInfo.getIdUsuario(),
                     userDetails.getUsername(),
-                    usuarioInfo.getRolUsuario()
+                    usuarioInfo.getRolUsuario(),
+                    usuarioInfo.isHabilitado() // <--- AÑADIDO: Incluir el estado de habilitación
             ));
 
         } catch (BadCredentialsException e) {
@@ -105,7 +115,17 @@ public class AuthController {
                             "Credenciales de inicio de sesión inválidas.",
                             "/api/v1/auth/login"
                     ));
-        } catch (Exception e) {
+        } catch (DisabledException e) { // <--- NUEVO BLOQUE CATCH PARA USUARIO DESHABILITADO
+            log.warn("Intento de login fallido: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiErrorResponseDTO(
+                            HttpStatus.UNAUTHORIZED.value(),
+                            "Usuario Deshabilitado",
+                            e.getMessage(), // Mensaje específico: "Su usuario no está habilitado..."
+                            "/api/v1/auth/login"
+                    ));
+        }
+        catch (Exception e) {
             log.error("Error durante la autenticación del usuario: {}. Error: {}", loginRequestDTO.getNombreUsuario(), e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiErrorResponseDTO(

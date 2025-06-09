@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.crypto.password.PasswordEncoder; // Para codificar contraseñas
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,8 +24,8 @@ public class UsuarioServiceImpl implements UsuarioService {
     private static final Logger log = LoggerFactory.getLogger(UsuarioServiceImpl.class);
 
     private final UsuarioRepository usuarioRepository;
-    private final EmpleadoRepository empleadoRepository; // Para vincular empleados
-    private final PasswordEncoder passwordEncoder; // Para hashear contraseñas
+    private final EmpleadoRepository empleadoRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public UsuarioServiceImpl(UsuarioRepository usuarioRepository,
                               EmpleadoRepository empleadoRepository,
@@ -48,6 +48,9 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuario.setNombreUsuario(createDTO.getNombreUsuario());
         usuario.setContrasena(passwordEncoder.encode(createDTO.getContrasena()));
         usuario.setRolUsuario(createDTO.getRolUsuario());
+        // MODIFICACIÓN CLAVE: Aseguramos que al crear, el usuario esté deshabilitado por defecto.
+        // La lógica de la entidad (constructores, @PrePersist) NO debe sobreescribir esto a 'true'.
+        usuario.setHabilitado(true);
 
         if (createDTO.getIdEmpleado() != null) {
             Empleado empleado = empleadoRepository.findById(createDTO.getIdEmpleado())
@@ -55,7 +58,6 @@ public class UsuarioServiceImpl implements UsuarioService {
                         log.warn("Empleado no encontrado con ID: {} para asociar a usuario", createDTO.getIdEmpleado());
                         return new ResourceNotFoundException("Empleado", "id", createDTO.getIdEmpleado());
                     });
-            // Verificar si el empleado ya está asociado a otro usuario
             if (empleado.getUsuario() != null) {
                 log.warn("Empleado ID {} ya está asociado al usuario ID {}", createDTO.getIdEmpleado(), empleado.getUsuario().getIdUsuario());
                 throw new BadRequestException("El empleado con ID " + createDTO.getIdEmpleado() + " ya está asociado a otro usuario.");
@@ -104,6 +106,14 @@ public class UsuarioServiceImpl implements UsuarioService {
             usuarioToUpdate.setRolUsuario(updateDTO.getRolUsuario());
         }
 
+        // Permitir la actualización del estado de habilitación desde el DTO
+        // Asumiendo que UsuarioUpdateRequestDTO puede contener 'habilitado'
+        if (updateDTO.getHabilitado() != null) {
+            usuarioToUpdate.setHabilitado(updateDTO.getHabilitado());
+            log.info("Actualizando estado de habilitación para usuario ID {}: {}", id, updateDTO.getHabilitado());
+        }
+
+
         if (updateDTO.getIdEmpleado() != null) {
             // Si se quiere cambiar o asignar empleado
             Empleado empleado = empleadoRepository.findById(updateDTO.getIdEmpleado())
@@ -113,12 +123,10 @@ public class UsuarioServiceImpl implements UsuarioService {
                 throw new BadRequestException("El empleado con ID " + updateDTO.getIdEmpleado() + " ya está asociado a otro usuario.");
             }
             usuarioToUpdate.setEmpleado(empleado);
-        } else {
-            // Si se pasa idEmpleado null explícitamente (para desvincular)
-            // O si la lógica de negocio es que si no viene no se toca, este 'else' puede quitarse
-            // y manejar el desvincular con un método específico o un valor especial.
-            // Asumamos que si idEmpleado es null en el DTO, queremos desvincular si estaba vinculado.
+        } else if (updateDTO.getIdEmpleado() == null && usuarioToUpdate.getEmpleado() != null) { // Lógica para desvincular explícitamente
+            // Si se pasa idEmpleado null explícitamente y el usuario tenía un empleado, desvincular
             usuarioToUpdate.setEmpleado(null);
+            log.info("Desvinculando empleado del usuario ID: {}", id);
         }
 
         Usuario updatedUsuario = usuarioRepository.save(usuarioToUpdate);
@@ -151,8 +159,6 @@ public class UsuarioServiceImpl implements UsuarioService {
         if (!usuarioRepository.existsById(id)) {
             throw new ResourceNotFoundException("Usuario", "id", id);
         }
-        // La BD no define CASCADE para usuarios, así que una eliminación simple es suficiente
-        // a menos que haya lógica de negocio adicional (ej. reasignar tareas).
         usuarioRepository.deleteById(id);
         log.info("Usuario eliminado con ID: {}", id);
     }
@@ -171,6 +177,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         dto.setIdUsuario(entity.getIdUsuario());
         dto.setNombreUsuario(entity.getNombreUsuario());
         dto.setRolUsuario(entity.getRolUsuario());
+        dto.setHabilitado(entity.isHabilitado()); // Mapear el estado habilitado para el frontend
         dto.setFechaCreacion(entity.getFechaCreacion());
         dto.setFechaActualizacion(entity.getFechaActualizacion());
 

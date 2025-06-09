@@ -2,7 +2,7 @@ package com.crmtech360.crmtech360_backend.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
-import com.crmtech360.crmtech360_backend.dto.EmpleadoSummaryDTO; // DESCOMENTA ESTA LÍNEA
+import com.crmtech360.crmtech360_backend.dto.EmpleadoSummaryDTO;
 
 @Schema(description = "DTO para la respuesta de información detallada de una cuenta de Usuario.")
 public class UsuarioResponseDTO {
@@ -15,6 +15,9 @@ public class UsuarioResponseDTO {
 
     @Schema(description = "Rol principal asignado al usuario en el sistema.", example = "Operario", accessMode = Schema.AccessMode.READ_ONLY)
     private String rolUsuario;
+
+    @Schema(description = "Indica si el usuario está habilitado para acceder al sistema.", example = "true", accessMode = Schema.AccessMode.READ_ONLY) // <--- NUEVO CAMPO
+    private boolean habilitado; // <--- NUEVO CAMPO
 
     @Schema(description = "Fecha y hora de creación de la cuenta de usuario en el sistema.", example = "2023-06-01T09:05:00", accessMode = Schema.AccessMode.READ_ONLY)
     private LocalDateTime fechaCreacion;
@@ -30,10 +33,13 @@ public class UsuarioResponseDTO {
     public UsuarioResponseDTO() {
     }
 
-    public UsuarioResponseDTO(Integer idUsuario, String nombreUsuario, String rolUsuario, LocalDateTime fechaCreacion, LocalDateTime fechaActualizacion, EmpleadoSummaryDTO empleado) {
+    // Constructor actualizado para incluir 'habilitado'
+    public UsuarioResponseDTO(Integer idUsuario, String nombreUsuario, String rolUsuario, boolean habilitado, // <--- MODIFICADO
+                              LocalDateTime fechaCreacion, LocalDateTime fechaActualizacion, EmpleadoSummaryDTO empleado) {
         this.idUsuario = idUsuario;
         this.nombreUsuario = nombreUsuario;
         this.rolUsuario = rolUsuario;
+        this.habilitado = habilitado; // <--- ASIGNACIÓN DEL NUEVO CAMPO
         this.fechaCreacion = fechaCreacion;
         this.fechaActualizacion = fechaActualizacion;
         this.empleado = empleado;
@@ -46,6 +52,15 @@ public class UsuarioResponseDTO {
     public void setNombreUsuario(String nombreUsuario) { this.nombreUsuario = nombreUsuario; }
     public String getRolUsuario() { return rolUsuario; }
     public void setRolUsuario(String rolUsuario) { this.rolUsuario = rolUsuario; }
+
+    // Nuevo Getter y Setter para 'habilitado'
+    public boolean isHabilitado() { // <--- NUEVO GETTER
+        return habilitado;
+    }
+    public void setHabilitado(boolean habilitado) { // <--- NUEVO SETTER
+        this.habilitado = habilitado;
+    }
+
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
     public LocalDateTime getFechaActualizacion() { return fechaActualizacion; }
