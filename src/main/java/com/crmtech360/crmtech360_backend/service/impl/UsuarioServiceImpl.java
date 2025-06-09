@@ -50,7 +50,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuario.setRolUsuario(createDTO.getRolUsuario());
         // MODIFICACIÓN CLAVE: Aseguramos que al crear, el usuario esté deshabilitado por defecto.
         // La lógica de la entidad (constructores, @PrePersist) NO debe sobreescribir esto a 'true'.
-        usuario.setHabilitado(true);
+        usuario.setHabilitado(false);
 
         if (createDTO.getIdEmpleado() != null) {
             Empleado empleado = empleadoRepository.findById(createDTO.getIdEmpleado())

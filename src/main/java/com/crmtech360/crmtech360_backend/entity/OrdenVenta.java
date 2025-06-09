@@ -44,8 +44,9 @@ public class OrdenVenta {
     @OneToMany(mappedBy = "ordenVenta", fetch = FetchType.LAZY) // ON DELETE SET NULL en BD
     private Set<OrdenProduccion> ordenesProduccion;
 
-    @OneToMany(mappedBy = "ordenVenta", fetch = FetchType.LAZY) // ON DELETE SET NULL en BD
-    private Set<PagoCobro> pagosCobros;
+    // Se ha eliminado la relación con PagoCobro
+    // @OneToMany(mappedBy = "ordenVenta", fetch = FetchType.LAZY) // ON DELETE SET NULL en BD
+    // private Set<PagoCobro> pagosCobros;
 
 
     // Constructores
@@ -153,13 +154,14 @@ public class OrdenVenta {
         this.ordenesProduccion = ordenesProduccion;
     }
 
-    public Set<PagoCobro> getPagosCobros() {
-        return pagosCobros;
-    }
+    // Se han eliminado los getters y setters para pagosCobros
+    // public Set<PagoCobro> getPagosCobros() {
+    // return pagosCobros;
+    // }
 
-    public void setPagosCobros(Set<PagoCobro> pagosCobros) {
-        this.pagosCobros = pagosCobros;
-    }
+    // public void setPagosCobros(Set<PagoCobro> pagosCobros) {
+    // this.pagosCobros = pagosCobros;
+    // }
 
     // equals y hashCode
     @Override
