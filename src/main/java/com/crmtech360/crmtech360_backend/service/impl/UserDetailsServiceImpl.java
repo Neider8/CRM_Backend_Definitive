@@ -1,9 +1,6 @@
 package com.crmtech360.crmtech360_backend.service.impl;
 
-import com.crmtech360.crmtech360_backend.entity.Permiso;
-import com.crmtech360.crmtech360_backend.entity.RolPermiso;
-import com.crmtech360.crmtech360_backend.entity.Usuario; // Asegúrate de que esta importación sea correcta
-import com.crmtech360.crmtech360_backend.repository.RolPermisoRepository;
+import com.crmtech360.crmtech360_backend.entity.Usuario;
 import com.crmtech360.crmtech360_backend.repository.UsuarioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,9 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service("userDetailsService")
 public class UserDetailsServiceImpl implements UserDetailsService {
@@ -28,12 +23,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private static final Logger log = LoggerFactory.getLogger(UserDetailsServiceImpl.class);
 
     private final UsuarioRepository usuarioRepository;
-    private final RolPermisoRepository rolPermisoRepository;
+    // Eliminado: private final RolPermisoRepository rolPermisoRepository;
 
     @Autowired
-    public UserDetailsServiceImpl(UsuarioRepository usuarioRepository, RolPermisoRepository rolPermisoRepository) {
+    public UserDetailsServiceImpl(UsuarioRepository usuarioRepository) {
         this.usuarioRepository = usuarioRepository;
-        this.rolPermisoRepository = rolPermisoRepository;
+        // Eliminado: this.rolPermisoRepository = rolPermisoRepository;
     }
 
     @Override
@@ -48,12 +43,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 });
 
         log.info("Usuario encontrado: {}, Rol: {}, Habilitado: {}",
-                usuario.getNombreUsuario(), usuario.getRolUsuario(), usuario.isHabilitado()); // Log el estado habilitado
+                usuario.getNombreUsuario(), usuario.getRolUsuario(), usuario.isHabilitado());
 
         Set<GrantedAuthority> authorities = new HashSet<>();
 
-        // 1. Añadir el ROL principal del usuario.
+        // Añadir el ROL principal del usuario como una autoridad.
+        // Ahora solo nos basamos en el String 'rolUsuario' de la entidad Usuario.
         if (usuario.getRolUsuario() != null && !usuario.getRolUsuario().trim().isEmpty()) {
+            // Es una buena práctica prefijar los roles con "ROLE_" para Spring Security
             String roleName = "ROLE_" + usuario.getRolUsuario().toUpperCase().replace(" ", "_");
             authorities.add(new SimpleGrantedAuthority(roleName));
             log.debug("Rol principal añadido como autoridad: {}", roleName);
@@ -61,40 +58,21 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             log.warn("El usuario '{}' no tiene un rol principal asignado o está vacío.", username);
         }
 
-        // 2. Añadir PERMISOS específicos asociados al rol del usuario.
-        if (usuario.getRolUsuario() != null && !usuario.getRolUsuario().trim().isEmpty()) {
-            List<RolPermiso> rolesPermisos = rolPermisoRepository.findByRolNombreWithPermisos(usuario.getRolUsuario());
-            if (rolesPermisos.isEmpty()) {
-                log.info("El rol '{}' para el usuario '{}' no tiene permisos específicos asignados en la tabla RolesPermisos.", usuario.getRolUsuario(), username);
-            } else {
-                rolesPermisos.forEach(rp -> {
-                    Permiso permiso = rp.getPermiso();
-                    if (permiso != null && permiso.getNombrePermiso() != null && !permiso.getNombrePermiso().trim().isEmpty()) {
-                        authorities.add(new SimpleGrantedAuthority(permiso.getNombrePermiso().toUpperCase().replace(" ", "_")));
-                        log.debug("Permiso específico añadido como autoridad para el rol '{}': {}", usuario.getRolUsuario(), permiso.getNombrePermiso().toUpperCase().replace(" ", "_"));
-                    } else {
-                        log.warn("Se encontró una asignación de RolPermiso (ID: {}) para el rol '{}' pero el permiso o su nombre es nulo/vacío.",
-                                rp.getIdRolPermiso() != null ? rp.getIdRolPermiso() : "N/A",
-                                usuario.getRolUsuario());
-                    }
-                });
-            }
-        } else {
-            log.warn("No se pueden cargar permisos específicos para el usuario '{}' porque no tiene un rol principal definido.", username);
-        }
+        // Eliminada la lógica para buscar y añadir PERMISOS específicos de las tablas eliminadas.
+        // El usuario solo tendrá el rol derivado de su campo 'rolUsuario'.
 
         if(authorities.isEmpty()){
-            log.warn("El usuario '{}' no tiene roles ni permisos asignados. La autenticación podría funcionar pero la autorización fallará para recursos protegidos.", username);
+            log.warn("El usuario '{}' no tiene roles asignados. La autenticación podría funcionar pero la autorización fallará para recursos protegidos.", username);
         }
 
         // Usamos el estado 'habilitado' del usuario de la base de datos
         return new User(
                 usuario.getNombreUsuario(),
                 usuario.getContrasena(),
-                usuario.isHabilitado(), // <--- CAMBIADO: Usar el valor del campo 'habilitado' de la entidad Usuario
-                true, // accountNonExpired (Puedes añadir un campo para esto si lo necesitas)
-                true, // credentialsNonExpired (Puedes añadir un campo para esto si lo necesitas)
-                true, // accountNonLocked (Puedes añadir un campo para esto si lo necesitas)
+                usuario.isHabilitado(), // Usar el valor del campo 'habilitado' de la entidad Usuario
+                true, // accountNonExpired (Considerar añadir un campo si necesitas expiración de cuenta)
+                true, // credentialsNonExpired (Considerar añadir un campo si necesitas expiración de credenciales)
+                true, // accountNonLocked (Considerar añadir un campo si necesitas bloqueo de cuenta)
                 authorities
         );
     }
