@@ -44,7 +44,7 @@ public class StockAlertServiceImpl implements StockAlertService {
     }
 
     @Override
-    @Scheduled(cron = "0 0/30 * * * ?") // Se ejecuta cada 30 minutos
+    @Scheduled(cron = "0 * * * * ?") // Se ejecuta cada minuto
     @Transactional
     public List<StockAlertDTO> checkStockLevelsAndGenerateAlerts() {
         logger.info("Iniciando verificación programada de niveles de stock...");
@@ -108,21 +108,46 @@ public class StockAlertServiceImpl implements StockAlertService {
                 .collect(Collectors.toList());
     }
 
-    // ... (El resto de los métodos: updateInsumoThreshold, updateProductoThreshold, convertToDto, markAlertAsViewed, markAlertAsResolved permanecen igual que en el archivo que subiste, ya son correctos)
     @Override
     @Transactional
     public void updateInsumoThreshold(Integer idInsumo, BigDecimal nuevoUmbral) {
+        Insumo insumo = insumoRepository.findById(idInsumo)
+                .orElseThrow(() -> new ResourceNotFoundException("Insumo", "id", idInsumo));
+
+        insumo.setStockMinimoInsumo(nuevoUmbral.intValue());
+        insumoRepository.save(insumo);
+        logger.info("Umbral PREDETERMINADO actualizado para Insumo ID {}: {}", idInsumo, nuevoUmbral.intValue());
+
         List<InventarioInsumo> items = inventarioInsumoRepository.findByInsumo_IdInsumo(idInsumo);
 
         if (items.isEmpty()) {
-            throw new ResourceNotFoundException("Inventario de Insumo", "idInsumo", idInsumo);
+            logger.warn("No se encontraron registros de inventario para el Insumo ID {}. El umbral predeterminado fue actualizado, pero no hay inventarios que modificar.", idInsumo);
         }
 
         for (InventarioInsumo item : items) {
             item.setUmbralMinimoStock(nuevoUmbral);
             inventarioInsumoRepository.save(item);
-            logger.info("Umbral de stock actualizado para Insumo ID {} en ubicación {}: {}", idInsumo, item.getUbicacionInventario(), nuevoUmbral);
+            logger.info("Umbral de INVENTARIO actualizado para Insumo ID {} en ubicación '{}': {}", idInsumo, item.getUbicacionInventario(), nuevoUmbral);
         }
+
+        // --- INICIO DE LA LÓGICA AÑADIDA ---
+        // Resolver alertas activas existentes para este insumo.
+        logger.info("Buscando y resolviendo alertas activas existentes para el Insumo ID {} para reflejar el nuevo umbral.", idInsumo);
+        List<AlertasStock> existingAlerts = alertasStockRepository.findByTipoItemAndIdItem("Insumo", idInsumo)
+                .stream()
+                .filter(a -> "Nueva".equals(a.getEstadoAlerta()) || "Vista".equals(a.getEstadoAlerta()))
+                .toList();
+
+        if (!existingAlerts.isEmpty()) {
+            for (AlertasStock alerta : existingAlerts) {
+                alerta.setEstadoAlerta("Resuelta");
+                // Opcional: añadir una nota si tuvieras un campo para ello en la entidad AlertasStock.
+                // alerta.setObservaciones("Resuelta automáticamente por actualización de umbral.");
+                alertasStockRepository.save(alerta);
+                logger.info("Alerta ID {} para Insumo ID {} resuelta automáticamente.", alerta.getIdAlerta(), idInsumo);
+            }
+        }
+        // --- FIN DE LA LÓGICA AÑADIDA ---
     }
 
     @Override
@@ -138,6 +163,23 @@ public class StockAlertServiceImpl implements StockAlertService {
             inventarioProductoRepository.save(item);
             logger.info("Umbral de stock actualizado para Producto ID {} en ubicación {}: {}", idProducto, item.getUbicacionInventario(), nuevoUmbral);
         }
+
+        // --- INICIO DE LA LÓGICA AÑADIDA ---
+        // Resolver alertas activas existentes para este producto.
+        logger.info("Buscando y resolviendo alertas activas existentes para el Producto ID {} para reflejar el nuevo umbral.", idProducto);
+        List<AlertasStock> existingAlerts = alertasStockRepository.findByTipoItemAndIdItem("Producto", idProducto)
+                .stream()
+                .filter(a -> "Nueva".equals(a.getEstadoAlerta()) || "Vista".equals(a.getEstadoAlerta()))
+                .toList();
+
+        if (!existingAlerts.isEmpty()) {
+            for (AlertasStock alerta : existingAlerts) {
+                alerta.setEstadoAlerta("Resuelta");
+                alertasStockRepository.save(alerta);
+                logger.info("Alerta ID {} para Producto ID {} resuelta automáticamente.", alerta.getIdAlerta(), idProducto);
+            }
+        }
+        // --- FIN DE LA LÓGICA AÑADIDA ---
     }
 
     private StockAlertDTO convertToDto(AlertasStock alerta) {
