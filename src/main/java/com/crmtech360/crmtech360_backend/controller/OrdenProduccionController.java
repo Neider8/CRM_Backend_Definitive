@@ -1,6 +1,6 @@
 package com.crmtech360.crmtech360_backend.controller;
 
-import com.crmtech360.crmtech360_backend.dto.*; // Asegúrate que ApiErrorResponseDTO está aquí
+import com.crmtech360.crmtech360_backend.dto.*;
 import com.crmtech360.crmtech360_backend.service.OrdenProduccionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,6 +23,10 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.List;
 
+/**
+ * Controlador para la gestión de órdenes de producción y sus tareas.
+ * Permite registrar, consultar, actualizar, anular y gestionar tareas asociadas a cada orden.
+ */
 @RestController
 @RequestMapping("/api/v1/ordenes-produccion")
 @Tag(name = "Órdenes de Producción", description = "API para la gestión de órdenes de producción y sus tareas asociadas.")
@@ -35,17 +39,17 @@ public class OrdenProduccionController {
         this.ordenProduccionService = ordenProduccionService;
     }
 
+    /**
+     * Registra una nueva orden de producción.
+     */
     @Operation(summary = "Crear una nueva orden de producción",
-            description = "Registra una nueva orden de producción, usualmente vinculada a una orden de venta confirmada. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE o permiso PERMISO_CREAR_ORDEN_PRODUCCION.")
+            description = "Registra una nueva orden de producción vinculada a una orden de venta confirmada.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Orden de producción creada exitosamente.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = OrdenProduccionResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Solicitud inválida (ej. orden de venta no válida o en estado incorrecto).",
+            @ApiResponse(responseCode = "400", description = "Solicitud inválida.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
-            @ApiResponse(responseCode = "404", description = "Orden de Venta no encontrada.",
+            @ApiResponse(responseCode = "404", description = "Orden de venta no encontrada.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class)))
     })
     @PostMapping
@@ -59,31 +63,30 @@ public class OrdenProduccionController {
         return ResponseEntity.created(location).body(createdOrden);
     }
 
+    /**
+     * Devuelve una lista paginada de todas las órdenes de producción.
+     */
     @Operation(summary = "Obtener todas las órdenes de producción (paginado)",
-            description = "Devuelve una lista paginada de todas las órdenes de producción. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE, OPERARIO o permiso PERMISO_VER_ORDENES_PRODUCCION.")
+            description = "Devuelve una lista paginada de todas las órdenes de producción registradas.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de órdenes de producción obtenida exitosamente.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))), // Page<OrdenProduccionResponseDTO>
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido.")
+            @ApiResponse(responseCode = "200", description = "Lista de órdenes de producción obtenida exitosamente.")
     })
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'OPERARIO') or hasAuthority('PERMISO_VER_ORDENES_PRODUCCION')")
     public ResponseEntity<Page<OrdenProduccionResponseDTO>> getAllOrdenesProduccion(
-            @Parameter(description = "Configuración de paginación (ej. page=0&size=10&sort=fechaCreacion,desc)")
+            @Parameter(description = "Configuración de paginación") 
             @PageableDefault(size = 10, sort = "fechaCreacion", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
         Page<OrdenProduccionResponseDTO> ordenes = ordenProduccionService.findAllOrdenesProduccion(pageable);
         return ResponseEntity.ok(ordenes);
     }
 
-    @Operation(summary = "Obtener todas las órdenes de producción para una orden de venta específica",
-            description = "Permite rastrear la producción asociada a una venta. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE, VENTAS, OPERARIO o permiso PERMISO_VER_ORDENES_PRODUCCION.")
+    /**
+     * Devuelve todas las órdenes de producción asociadas a una orden de venta.
+     */
+    @Operation(summary = "Obtener todas las órdenes de producción para una orden de venta",
+            description = "Lista todas las órdenes de producción asociadas a una orden de venta específica.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de órdenes de producción para la orden de venta especificada."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
             @ApiResponse(responseCode = "404", description = "Orden de venta no encontrada.")
     })
     @GetMapping("/por-orden-venta/{idOrdenVenta}")
@@ -94,14 +97,13 @@ public class OrdenProduccionController {
         return ResponseEntity.ok(ordenes);
     }
 
+    /**
+     * Consulta una orden de producción por su ID.
+     */
     @Operation(summary = "Obtener una orden de producción por su ID",
-            description = "Devuelve los detalles de una orden de producción específica, incluyendo sus tareas. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE, OPERARIO o permiso PERMISO_VER_ORDENES_PRODUCCION.")
+            description = "Devuelve los detalles de una orden de producción específica, incluyendo sus tareas.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Orden de producción encontrada.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = OrdenProduccionResponseDTO.class))),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
+            @ApiResponse(responseCode = "200", description = "Orden de producción encontrada."),
             @ApiResponse(responseCode = "404", description = "Orden de producción no encontrada.")
     })
     @GetMapping("/{id}")
@@ -112,16 +114,14 @@ public class OrdenProduccionController {
         return ResponseEntity.ok(orden);
     }
 
-    @Operation(summary = "Actualizar la cabecera de una orden de producción existente",
-            description = "Permite modificar fechas, estado u observaciones de una orden de producción. " +
-                    "No se puede modificar si está ANULADA o TERMINADA. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE o permiso PERMISO_EDITAR_ORDEN_PRODUCCION.")
+    /**
+     * Actualiza la cabecera de una orden de producción existente.
+     */
+    @Operation(summary = "Actualizar la cabecera de una orden de producción",
+            description = "Permite modificar fechas, estado u observaciones de una orden de producción. No se puede modificar si está ANULADA o TERMINADA.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Orden de producción actualizada.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = OrdenProduccionResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Solicitud inválida o no se puede modificar la orden en su estado actual."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
+            @ApiResponse(responseCode = "200", description = "Orden de producción actualizada."),
+            @ApiResponse(responseCode = "400", description = "No se puede modificar la orden en su estado actual."),
             @ApiResponse(responseCode = "404", description = "Orden de producción no encontrada.")
     })
     @PutMapping("/{id}")
@@ -133,15 +133,14 @@ public class OrdenProduccionController {
         return ResponseEntity.ok(updatedOrden);
     }
 
+    /**
+     * Anula una orden de producción.
+     */
     @Operation(summary = "Anular una orden de producción",
-            description = "Marca una orden de producción como anulada. Esto también puede afectar el estado de sus tareas asociadas. " +
-                    "No se puede anular si ya está TERMINADA. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE o permiso PERMISO_ANULAR_ORDEN_PRODUCCION.")
+            description = "Marca una orden de producción como anulada. No se puede anular si ya está terminada.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Orden de producción anulada exitosamente."),
             @ApiResponse(responseCode = "400", description = "No se puede anular la orden en su estado actual."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
             @ApiResponse(responseCode = "404", description = "Orden de producción no encontrada.")
     })
     @PostMapping("/{id}/anular")
@@ -152,17 +151,18 @@ public class OrdenProduccionController {
         return ResponseEntity.ok().build();
     }
 
-    // --- Endpoints para Tareas de Producción ---
+    // --- Tareas de Producción ---
 
+    /**
+     * Añade una nueva tarea a una orden de producción.
+     */
     @Operation(summary = "Añadir una nueva tarea a una orden de producción",
-            description = "Requiere rol ADMINISTRADOR, GERENTE o permiso PERMISO_GESTIONAR_TAREAS_PRODUCCION.")
+            description = "Agrega una tarea a una orden de producción existente.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Tarea añadida exitosamente a la orden de producción.",
+            @ApiResponse(responseCode = "201", description = "Tarea añadida exitosamente.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = TareaProduccionResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Solicitud inválida (ej. orden de producción no editable, empleado no existe)."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
-            @ApiResponse(responseCode = "404", description = "Orden de producción o Empleado no encontrado.")
+            @ApiResponse(responseCode = "400", description = "Solicitud inválida."),
+            @ApiResponse(responseCode = "404", description = "Orden de producción o empleado no encontrado.")
     })
     @PostMapping("/{idOrdenProduccion}/tareas")
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE') or hasAuthority('PERMISO_GESTIONAR_TAREAS_PRODUCCION')")
@@ -170,20 +170,17 @@ public class OrdenProduccionController {
             @Parameter(description = "ID de la orden de producción a la que se añade la tarea.", required = true) @PathVariable Integer idOrdenProduccion,
             @Valid @RequestBody TareaProduccionCreateRequestDTO tareaRequestDTO) {
         TareaProduccionResponseDTO createdTarea = ordenProduccionService.addTareaToOrdenProduccion(idOrdenProduccion, tareaRequestDTO);
-        // URI location podría apuntar a /api/v1/ordenes-produccion/{idOrdenProduccion}/tareas/{idTarea}
-        // Por simplicidad, devolvemos el cuerpo con 201.
         return ResponseEntity.status(HttpStatus.CREATED).body(createdTarea);
     }
 
-    @Operation(summary = "Actualizar una tarea específica en una orden de producción",
-            description = "Permite modificar detalles de una tarea, como su estado o empleado asignado. " +
-                    "OPERARIO puede actualizar tareas asignadas a él. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE, OPERARIO (condicional) o permiso PERMISO_GESTIONAR_TAREAS_PRODUCCION.")
+    /**
+     * Actualiza una tarea específica en una orden de producción.
+     */
+    @Operation(summary = "Actualizar una tarea de una orden de producción",
+            description = "Permite modificar detalles de una tarea, como su estado o empleado asignado.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Tarea actualizada exitosamente."),
             @ApiResponse(responseCode = "400", description = "Solicitud inválida."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido (ej. operario intentando modificar tarea ajena)."),
             @ApiResponse(responseCode = "404", description = "Orden de producción, tarea o empleado no encontrado.")
     })
     @PutMapping("/{idOrdenProduccion}/tareas/{idTarea}")
@@ -192,17 +189,17 @@ public class OrdenProduccionController {
             @Parameter(description = "ID de la orden de producción.", required = true) @PathVariable Integer idOrdenProduccion,
             @Parameter(description = "ID de la tarea a actualizar.", required = true) @PathVariable Integer idTarea,
             @Valid @RequestBody TareaProduccionUpdateRequestDTO tareaRequestDTO) {
-        // La lógica para que un OPERARIO solo modifique sus propias tareas debería estar en el servicio.
         TareaProduccionResponseDTO updatedTarea = ordenProduccionService.updateTareaInOrdenProduccion(idOrdenProduccion, idTarea, tareaRequestDTO);
         return ResponseEntity.ok(updatedTarea);
     }
 
-    @Operation(summary = "Eliminar una tarea específica de una orden de producción",
-            description = "Requiere rol ADMINISTRADOR, GERENTE o permiso PERMISO_GESTIONAR_TAREAS_PRODUCCION.")
+    /**
+     * Elimina una tarea específica de una orden de producción.
+     */
+    @Operation(summary = "Eliminar una tarea de una orden de producción",
+            description = "Elimina una tarea asociada a una orden de producción.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Tarea eliminada exitosamente."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
             @ApiResponse(responseCode = "404", description = "Orden de producción o tarea no encontrada.")
     })
     @DeleteMapping("/{idOrdenProduccion}/tareas/{idTarea}")

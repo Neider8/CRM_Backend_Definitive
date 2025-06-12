@@ -8,8 +8,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional; // Asegúrate de importar Optional
+import java.util.Optional;
 
+/**
+ * Repositorio para gestionar los detalles de las órdenes de compra.
+ * Permite búsquedas por orden, insumo y operaciones sobre subtotales.
+ */
 @Repository
 public interface DetalleOrdenCompraRepository extends JpaRepository<DetalleOrdenCompra, Integer> {
     List<DetalleOrdenCompra> findByOrdenCompra(OrdenCompra ordenCompra);
@@ -22,6 +26,5 @@ public interface DetalleOrdenCompraRepository extends JpaRepository<DetalleOrden
     @Query("SELECT SUM(doc.subtotalCompra) FROM DetalleOrdenCompra doc WHERE doc.ordenCompra = ?1")
     BigDecimal sumSubtotalByOrdenCompra(OrdenCompra ordenCompra);
 
-    // MÉTODO AÑADIDO/CORREGIDO:
     Optional<DetalleOrdenCompra> findByIdDetalleCompraAndOrdenCompra_IdOrdenCompra(Integer idDetalleCompra, Integer idOrdenCompra);
 }

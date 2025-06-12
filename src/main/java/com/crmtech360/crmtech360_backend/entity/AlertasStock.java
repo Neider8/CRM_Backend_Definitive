@@ -6,23 +6,23 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * Entidad JPA que representa una alerta de bajo stock generada por el sistema.
- * Mapea la tabla 'AlertasStock' en la base de datos.
+ * Representa una alerta de stock bajo para insumos o productos.
+ * Incluye información sobre el tipo de ítem, nivel actual, umbral configurado y estado de la alerta.
  */
 @Entity
-@Table(name = "alertasstock") // Asegúrate de que el nombre de la tabla coincida con tu DDL
+@Table(name = "alertasstock")
 public class AlertasStock {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_alerta")
-    private Integer idAlerta; // Coincide con SERIAL PRIMARY KEY en PostgreSQL
+    private Integer idAlerta;
 
     @Column(name = "tipo_item", nullable = false, length = 50)
-    private String tipoItem; // 'Insumo' o 'Producto'
+    private String tipoItem; // Puede ser 'Insumo' o 'Producto'
 
     @Column(name = "id_item", nullable = false)
-    private Integer idItem; // ID del insumo o producto
+    private Integer idItem;
 
     @Column(name = "mensaje", nullable = false, columnDefinition = "TEXT")
     private String mensaje;
@@ -40,20 +40,18 @@ public class AlertasStock {
     private LocalDateTime fechaVista;
 
     @Column(name = "id_usuario_vista")
-    private Integer idUsuarioVista; // Quién vio la alerta
+    private Integer idUsuarioVista;
 
     @Column(name = "estado_alerta", nullable = false, length = 20)
-    private String estadoAlerta; // 'Nueva', 'Vista', 'Resuelta'
+    private String estadoAlerta; // Ejemplo: 'Nueva', 'Vista', 'Resuelta'
 
-    // Constructor por defecto
     public AlertasStock() {
-        this.fechaCreacion = LocalDateTime.now(); // Establecer fecha de creación por defecto
-        this.estadoAlerta = "Nueva"; // Establecer estado inicial por defecto
+        this.fechaCreacion = LocalDateTime.now();
+        this.estadoAlerta = "Nueva";
     }
 
-    // Constructor con parámetros para facilitar la creación de alertas
     public AlertasStock(String tipoItem, Integer idItem, String mensaje, BigDecimal nivelActual, BigDecimal umbralConfigurado) {
-        this(); // Llama al constructor por defecto para inicializar fechaCreacion y estadoAlerta
+        this();
         this.tipoItem = tipoItem;
         this.idItem = idItem;
         this.mensaje = mensaje;
@@ -61,7 +59,6 @@ public class AlertasStock {
         this.umbralConfigurado = umbralConfigurado;
     }
 
-    // Getters y Setters
     public Integer getIdAlerta() {
         return idAlerta;
     }
@@ -145,8 +142,7 @@ public class AlertasStock {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        AlertasStock that = (AlertasStock) o;
+        if (!(o instanceof AlertasStock that)) return false;
         return Objects.equals(idAlerta, that.idAlerta);
     }
 

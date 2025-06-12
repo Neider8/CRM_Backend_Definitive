@@ -7,6 +7,10 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repositorio para consultar y administrar empleados.
+ * Permite búsquedas por documento, nombre, cargo, área y otros criterios.
+ */
 @Repository
 public interface EmpleadoRepository extends JpaRepository<Empleado, Integer> {
     Optional<Empleado> findByNumeroDocumento(String numeroDocumento);

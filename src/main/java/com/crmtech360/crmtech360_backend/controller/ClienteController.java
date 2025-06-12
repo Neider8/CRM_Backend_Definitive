@@ -1,6 +1,6 @@
 package com.crmtech360.crmtech360_backend.controller;
 
-import com.crmtech360.crmtech360_backend.dto.*; // Asegúrate que ApiErrorResponseDTO esté aquí o importado explícitamente
+import com.crmtech360.crmtech360_backend.dto.*;
 import com.crmtech360.crmtech360_backend.service.ClienteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,10 +23,15 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.List;
 
+/**
+ * Controlador para la gestión de clientes y sus contactos.
+ * Incluye operaciones para crear, consultar, actualizar y eliminar clientes,
+ * así como para administrar los contactos asociados a cada cliente.
+ */
 @RestController
 @RequestMapping("/api/v1/clientes")
-@Tag(name = "Clientes", description = "API para la gestión de clientes y sus contactos.")
-@SecurityRequirement(name = "bearerAuth") // Aplica a todos los endpoints en este controlador
+@Tag(name = "Clientes", description = "Operaciones para la gestión de clientes y sus contactos.")
+@SecurityRequirement(name = "bearerAuth")
 public class ClienteController {
 
     private final ClienteService clienteService;
@@ -35,19 +40,18 @@ public class ClienteController {
         this.clienteService = clienteService;
     }
 
+    /**
+     * Registra un nuevo cliente en el sistema.
+     * El número de documento debe ser único.
+     */
     @Operation(summary = "Crear un nuevo cliente",
-            description = "Permite registrar un nuevo cliente en el sistema. El número de documento debe ser único. " +
-                    "Requiere rol ADMINISTRADOR, VENTAS o permiso PERMISO_CREAR_CLIENTES.")
+            description = "Registra un cliente. Requiere permisos de administrador, ventas o permiso específico.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Cliente creado exitosamente",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ClienteResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Solicitud inválida debido a datos incorrectos (ej. validación fallida).",
+            @ApiResponse(responseCode = "400", description = "Datos inválidos o incompletos.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "401", description = "No Autorizado - Se requiere token JWT o token inválido.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "403", description = "Prohibido - El usuario no tiene los permisos necesarios.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "409", description = "Conflicto - Ya existe un cliente con el mismo número de documento.",
+            @ApiResponse(responseCode = "409", description = "Ya existe un cliente con ese documento.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class)))
     })
     @PostMapping
@@ -61,120 +65,108 @@ public class ClienteController {
         return ResponseEntity.created(location).body(createdCliente);
     }
 
+    /**
+     * Devuelve una lista paginada de clientes.
+     */
     @Operation(summary = "Obtener todos los clientes (paginado)",
-            description = "Devuelve una lista paginada de todos los clientes. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE, VENTAS o permiso PERMISO_VER_CLIENTES.")
+            description = "Lista paginada de clientes. Requiere permisos de consulta.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de clientes obtenida exitosamente.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))), //Page<ClienteResponseDTO>
-            @ApiResponse(responseCode = "401", description = "No Autorizado.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "403", description = "Prohibido.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class)))
+            @ApiResponse(responseCode = "200", description = "Lista de clientes obtenida."),
+            @ApiResponse(responseCode = "403", description = "No tiene permisos para ver clientes.")
     })
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'VENTAS') or hasAuthority('PERMISO_VER_CLIENTES')")
     public ResponseEntity<Page<ClienteResponseDTO>> getAllClientes(
-            @Parameter(description = "Configuración de paginación (ej. page=0&size=10&sort=nombreCliente,asc)")
+            @Parameter(description = "Parámetros de paginación y ordenamiento")
             @PageableDefault(size = 10, sort = "nombreCliente") Pageable pageable) {
         Page<ClienteResponseDTO> clientes = clienteService.findAllClientes(pageable);
         return ResponseEntity.ok(clientes);
     }
 
+    /**
+     * Consulta los datos de un cliente por su ID.
+     */
     @Operation(summary = "Obtener un cliente por su ID",
-            description = "Devuelve los detalles de un cliente específico. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE, VENTAS o permiso PERMISO_VER_CLIENTES.")
+            description = "Devuelve los datos de un cliente específico.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Cliente encontrado.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ClienteResponseDTO.class))),
-            @ApiResponse(responseCode = "401", description = "No Autorizado.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "403", description = "Prohibido.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "404", description = "Cliente no encontrado.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class)))
+            @ApiResponse(responseCode = "200", description = "Cliente encontrado."),
+            @ApiResponse(responseCode = "404", description = "Cliente no encontrado.")
     })
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'VENTAS') or hasAuthority('PERMISO_VER_CLIENTES')")
     public ResponseEntity<ClienteResponseDTO> getClienteById(
-            @Parameter(description = "ID del cliente a obtener.", required = true, example = "1") @PathVariable Integer id) {
+            @Parameter(description = "ID del cliente", required = true, example = "1") @PathVariable Integer id) {
         ClienteResponseDTO cliente = clienteService.findClienteById(id);
         return ResponseEntity.ok(cliente);
     }
 
+    /**
+     * Consulta los datos de un cliente por su número de documento.
+     */
     @Operation(summary = "Obtener un cliente por su número de documento",
-            description = "Devuelve los detalles de un cliente específico basado en su número de documento. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE, VENTAS o permiso PERMISO_VER_CLIENTES.")
+            description = "Busca un cliente usando su número de documento.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Cliente encontrado.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ClienteResponseDTO.class))),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
+            @ApiResponse(responseCode = "200", description = "Cliente encontrado."),
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado.")
     })
     @GetMapping("/documento/{numeroDocumento}")
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'VENTAS') or hasAuthority('PERMISO_VER_CLIENTES')")
     public ResponseEntity<ClienteResponseDTO> getClienteByNumeroDocumento(
-            @Parameter(description = "Número de documento del cliente a obtener.", required = true, example = "123456789") @PathVariable String numeroDocumento) {
+            @Parameter(description = "Número de documento", required = true, example = "123456789") @PathVariable String numeroDocumento) {
         ClienteResponseDTO cliente = clienteService.findClienteByNumeroDocumento(numeroDocumento);
         return ResponseEntity.ok(cliente);
     }
 
+    /**
+     * Actualiza los datos de un cliente existente.
+     */
     @Operation(summary = "Actualizar un cliente existente",
-            description = "Permite modificar los detalles de un cliente existente. " +
-                    "Requiere rol ADMINISTRADOR, VENTAS o permiso PERMISO_EDITAR_CLIENTES.")
+            description = "Modifica los datos de un cliente. Requiere permisos de edición.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Cliente actualizado exitosamente.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ClienteResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Solicitud inválida."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
-            @ApiResponse(responseCode = "404", description = "Cliente no encontrado."),
-            @ApiResponse(responseCode = "409", description = "Conflicto, el nuevo número de documento ya existe para otro cliente.")
+            @ApiResponse(responseCode = "200", description = "Cliente actualizado."),
+            @ApiResponse(responseCode = "404", description = "Cliente no encontrado.")
     })
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'VENTAS') or hasAuthority('PERMISO_EDITAR_CLIENTES')")
     public ResponseEntity<ClienteResponseDTO> updateCliente(
-            @Parameter(description = "ID del cliente a actualizar.", required = true) @PathVariable Integer id,
+            @Parameter(description = "ID del cliente", required = true) @PathVariable Integer id,
             @Valid @RequestBody ClienteRequestDTO clienteRequestDTO) {
         ClienteResponseDTO updatedCliente = clienteService.updateCliente(id, clienteRequestDTO);
         return ResponseEntity.ok(updatedCliente);
     }
 
+    /**
+     * Elimina un cliente por su ID.
+     */
     @Operation(summary = "Eliminar un cliente por su ID",
-            description = "Elimina un cliente del sistema. Esta acción no se puede deshacer. " +
-                    "Requiere rol ADMINISTRADOR o permiso PERMISO_ELIMINAR_CLIENTES.")
+            description = "Elimina un cliente del sistema. Esta acción es irreversible.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Cliente eliminado exitosamente."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
-            @ApiResponse(responseCode = "404", description = "Cliente no encontrado."),
-            @ApiResponse(responseCode = "409", description = "Conflicto, el cliente no se puede eliminar (ej. tiene órdenes asociadas).")
+            @ApiResponse(responseCode = "204", description = "Cliente eliminado."),
+            @ApiResponse(responseCode = "404", description = "Cliente no encontrado.")
     })
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR') or hasAuthority('PERMISO_ELIMINAR_CLIENTES')")
     public ResponseEntity<Void> deleteCliente(
-            @Parameter(description = "ID del cliente a eliminar.", required = true) @PathVariable Integer id) {
+            @Parameter(description = "ID del cliente", required = true) @PathVariable Integer id) {
         clienteService.deleteCliente(id);
         return ResponseEntity.noContent().build();
     }
 
-    // --- Endpoints para Contactos de Cliente ---
+    // --- Contactos de Cliente ---
 
-    @Operation(summary = "Añadir un contacto a un cliente existente",
-            description = "Requiere los mismos permisos que para crear o editar un cliente.")
+    /**
+     * Añade un contacto a un cliente existente.
+     */
+    @Operation(summary = "Añadir un contacto a un cliente",
+            description = "Permite agregar un nuevo contacto a un cliente.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Contacto añadido exitosamente.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ContactoClienteResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Solicitud inválida."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
+            @ApiResponse(responseCode = "201", description = "Contacto añadido."),
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado.")
     })
     @PostMapping("/{idCliente}/contactos")
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'VENTAS') or hasAuthority('PERMISO_EDITAR_CLIENTES') or hasAuthority('PERMISO_CREAR_CLIENTES')")
     public ResponseEntity<ContactoClienteResponseDTO> addContactoToCliente(
-            @Parameter(description = "ID del cliente al que se añade el contacto.", required = true) @PathVariable Integer idCliente,
+            @Parameter(description = "ID del cliente", required = true) @PathVariable Integer idCliente,
             @Valid @RequestBody ContactoClienteRequestDTO contactoRequestDTO) {
         ContactoClienteResponseDTO createdContacto = clienteService.addContactoToCliente(idCliente, contactoRequestDTO);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
@@ -184,54 +176,56 @@ public class ClienteController {
         return ResponseEntity.created(location).body(createdContacto);
     }
 
-    @Operation(summary = "Obtener todos los contactos de un cliente específico",
-            description = "Requiere los mismos permisos que para ver un cliente.")
+    /**
+     * Obtiene todos los contactos de un cliente.
+     */
+    @Operation(summary = "Obtener todos los contactos de un cliente",
+            description = "Devuelve la lista de contactos asociados a un cliente.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de contactos obtenida exitosamente."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
+            @ApiResponse(responseCode = "200", description = "Lista de contactos obtenida."),
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado.")
     })
     @GetMapping("/{idCliente}/contactos")
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE', 'VENTAS') or hasAuthority('PERMISO_VER_CLIENTES')")
     public ResponseEntity<List<ContactoClienteResponseDTO>> getContactosByClienteId(
-            @Parameter(description = "ID del cliente para obtener sus contactos.", required = true) @PathVariable Integer idCliente) {
+            @Parameter(description = "ID del cliente", required = true) @PathVariable Integer idCliente) {
         List<ContactoClienteResponseDTO> contactos = clienteService.findContactosByClienteId(idCliente);
         return ResponseEntity.ok(contactos);
     }
 
-    @Operation(summary = "Actualizar un contacto específico de un cliente",
-            description = "Requiere los mismos permisos que para editar un cliente.")
+    /**
+     * Actualiza un contacto específico de un cliente.
+     */
+    @Operation(summary = "Actualizar un contacto de un cliente",
+            description = "Permite modificar los datos de un contacto de cliente.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Contacto actualizado exitosamente."),
-            @ApiResponse(responseCode = "400", description = "Solicitud inválida."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
-            @ApiResponse(responseCode = "404", description = "Cliente o Contacto no encontrado.")
+            @ApiResponse(responseCode = "200", description = "Contacto actualizado."),
+            @ApiResponse(responseCode = "404", description = "Cliente o contacto no encontrado.")
     })
     @PutMapping("/{idCliente}/contactos/{idContacto}")
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'VENTAS') or hasAuthority('PERMISO_EDITAR_CLIENTES')")
     public ResponseEntity<ContactoClienteResponseDTO> updateContactoCliente(
-            @Parameter(description = "ID del cliente.", required = true) @PathVariable Integer idCliente,
-            @Parameter(description = "ID del contacto a actualizar.", required = true) @PathVariable Integer idContacto,
+            @Parameter(description = "ID del cliente", required = true) @PathVariable Integer idCliente,
+            @Parameter(description = "ID del contacto", required = true) @PathVariable Integer idContacto,
             @Valid @RequestBody ContactoClienteRequestDTO contactoRequestDTO) {
         ContactoClienteResponseDTO updatedContacto = clienteService.updateContactoCliente(idCliente, idContacto, contactoRequestDTO);
         return ResponseEntity.ok(updatedContacto);
     }
 
-    @Operation(summary = "Eliminar un contacto específico de un cliente",
-            description = "Requiere los mismos permisos que para eliminar un cliente o un permiso más específico si se desea.")
+    /**
+     * Elimina un contacto de un cliente.
+     */
+    @Operation(summary = "Eliminar un contacto de un cliente",
+            description = "Elimina un contacto asociado a un cliente.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Contacto eliminado exitosamente."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
-            @ApiResponse(responseCode = "404", description = "Cliente o Contacto no encontrado.")
+            @ApiResponse(responseCode = "204", description = "Contacto eliminado."),
+            @ApiResponse(responseCode = "404", description = "Cliente o contacto no encontrado.")
     })
     @DeleteMapping("/{idCliente}/contactos/{idContacto}")
     @PreAuthorize("hasRole('ADMINISTRADOR') or hasAuthority('PERMISO_ELIMINAR_CLIENTES')")
     public ResponseEntity<Void> deleteContactoCliente(
-            @Parameter(description = "ID del cliente.", required = true) @PathVariable Integer idCliente,
-            @Parameter(description = "ID del contacto a eliminar.", required = true) @PathVariable Integer idContacto) {
+            @Parameter(description = "ID del cliente", required = true) @PathVariable Integer idCliente,
+            @Parameter(description = "ID del contacto", required = true) @PathVariable Integer idContacto) {
         clienteService.deleteContactoCliente(idCliente, idContacto);
         return ResponseEntity.noContent().build();
     }

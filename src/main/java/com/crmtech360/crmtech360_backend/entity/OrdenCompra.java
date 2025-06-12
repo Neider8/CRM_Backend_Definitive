@@ -7,6 +7,10 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Entidad que representa una orden de compra realizada a un proveedor.
+ * Incluye fechas, estado, total, observaciones y sus detalles asociados.
+ */
 @Entity
 @Table(name = "ordenescompra")
 public class OrdenCompra {
@@ -17,7 +21,7 @@ public class OrdenCompra {
     private Integer idOrdenCompra;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_proveedor") // ON DELETE SET NULL en la BD
+    @JoinColumn(name = "id_proveedor")
     private Proveedor proveedor;
 
     @Column(name = "fecha_pedido_compra", columnDefinition = "TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP", updatable = false)
@@ -30,7 +34,7 @@ public class OrdenCompra {
     private LocalDate fechaEntregaRealCompra;
 
     @Column(name = "estado_compra", nullable = false, length = 20)
-    private String estadoCompra; // 'Pendiente', 'Enviada', 'Recibida Parcial', 'Recibida Total', 'Anulada'
+    private String estadoCompra;
 
     @Column(name = "total_compra", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalCompra;
@@ -44,12 +48,6 @@ public class OrdenCompra {
     @OneToMany(mappedBy = "ordenCompra", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<DetalleOrdenCompra> detallesOrdenCompra;
 
-    // Se ha eliminado la relación con PagoCobro
-    // @OneToMany(mappedBy = "ordenCompra", fetch = FetchType.LAZY) // ON DELETE SET NULL en BD
-    // private Set<PagoCobro> pagosCobros;
-
-
-    // Constructores
     public OrdenCompra() {
     }
 
@@ -73,7 +71,6 @@ public class OrdenCompra {
         fechaActualizacion = LocalDateTime.now();
     }
 
-    // Getters y Setters
     public Integer getIdOrdenCompra() {
         return idOrdenCompra;
     }
@@ -154,16 +151,9 @@ public class OrdenCompra {
         this.detallesOrdenCompra = detallesOrdenCompra;
     }
 
-    // Se han eliminado los getters y setters para pagosCobros
-    // public Set<PagoCobro> getPagosCobros() {
-    // return pagosCobros;
-    // }
-
-    // public void setPagosCobros(Set<PagoCobro> pagosCobros) {
-    // this.pagosCobros = pagosCobros;
-    // }
-
-    // equals y hashCode
+    /**
+     * Dos órdenes de compra son iguales si tienen el mismo ID.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -177,7 +167,6 @@ public class OrdenCompra {
         return Objects.hash(idOrdenCompra);
     }
 
-    // toString
     @Override
     public String toString() {
         return "OrdenCompra{" +

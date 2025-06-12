@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.Objects;
 
+/**
+ * Relación entre un producto terminado y un insumo requerido para su fabricación.
+ * Define la cantidad necesaria de cada insumo para un producto específico.
+ */
 @Entity
 @Table(name = "insumosporproducto")
 public class InsumoPorProducto {
@@ -12,19 +16,18 @@ public class InsumoPorProducto {
     private InsumoPorProductoId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("idProducto") // Mapea la parte 'idProducto' del EmbeddedId
+    @MapsId("idProducto")
     @JoinColumn(name = "id_producto")
     private Producto producto;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("idInsumo") // Mapea la parte 'idInsumo' del EmbeddedId
+    @MapsId("idInsumo")
     @JoinColumn(name = "id_insumo")
     private Insumo insumo;
 
     @Column(name = "cantidad_requerida", nullable = false, precision = 10, scale = 3)
     private BigDecimal cantidadRequerida;
 
-    // Constructores
     public InsumoPorProducto() {
     }
 
@@ -35,7 +38,6 @@ public class InsumoPorProducto {
         this.id = new InsumoPorProductoId(producto.getIdProducto(), insumo.getIdInsumo());
     }
 
-    // Getters y Setters
     public InsumoPorProductoId getId() {
         return id;
     }
@@ -68,7 +70,9 @@ public class InsumoPorProducto {
         this.cantidadRequerida = cantidadRequerida;
     }
 
-    // equals y hashCode (basado en el EmbeddedId)
+    /**
+     * Dos relaciones son iguales si tienen el mismo ID compuesto (producto e insumo).
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -82,7 +86,6 @@ public class InsumoPorProducto {
         return Objects.hash(id);
     }
 
-    // toString
     @Override
     public String toString() {
         return "InsumoPorProducto{" +

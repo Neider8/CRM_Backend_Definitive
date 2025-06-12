@@ -5,12 +5,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional; // <-- AÑADE ESTE IMPORT
+import java.util.Optional;
 
 /**
- * Repositorio JPA para la entidad AlertasStock.
- * Proporciona métodos para operaciones CRUD y consultas personalizadas
- * para la gestión de alertas de stock.
+ * Repositorio para la gestión de alertas de stock.
+ * Permite consultar alertas por estado, tipo de ítem e identificador.
  */
 @Repository
 public interface AlertasStockRepository extends JpaRepository<AlertasStock, Integer> {
@@ -21,10 +20,8 @@ public interface AlertasStockRepository extends JpaRepository<AlertasStock, Inte
 
     List<AlertasStock> findByTipoItemAndIdItem(String tipoItem, Integer idItem);
 
-    // --- MÉTODO NUEVO ---
     /**
-     * Busca una alerta activa por tipo de item, id de item y estado.
-     * Útil para evitar crear alertas duplicadas si ya existe una 'Nueva'.
+     * Busca una alerta por tipo de ítem, id y estado.
      */
     Optional<AlertasStock> findByTipoItemAndIdItemAndEstadoAlerta(String tipoItem, Integer idItem, String estadoAlerta);
 }

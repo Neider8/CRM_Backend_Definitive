@@ -7,6 +7,10 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Entidad que representa a un empleado de la empresa.
+ * Incluye datos personales, laborales y relaciones con usuario y tareas de producción.
+ */
 @Entity
 @Table(name = "empleados")
 public class Empleado {
@@ -43,16 +47,12 @@ public class Empleado {
     @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
 
-    // Relación con Usuarios (un empleado puede ser un usuario)
     @OneToOne(mappedBy = "empleado", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private Usuario usuario;
 
-    // Relación con TareasProduccion (un empleado puede tener muchas tareas)
-    @OneToMany(mappedBy = "empleado", fetch = FetchType.LAZY) // No CascadeType.ALL aquí, las tareas no se borran con el empleado
+    @OneToMany(mappedBy = "empleado", fetch = FetchType.LAZY)
     private Set<TareaProduccion> tareasProduccion;
 
-
-    // Constructores
     public Empleado() {
     }
 
@@ -76,7 +76,6 @@ public class Empleado {
         fechaActualizacion = LocalDateTime.now();
     }
 
-    // Getters y Setters
     public Integer getIdEmpleado() {
         return idEmpleado;
     }
@@ -173,7 +172,9 @@ public class Empleado {
         this.tareasProduccion = tareasProduccion;
     }
 
-    // equals y hashCode (basado en numeroDocumento si está disponible, sino idEmpleado)
+    /**
+     * Dos empleados son iguales si tienen el mismo número de documento o, en su defecto, el mismo ID.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -200,7 +201,6 @@ public class Empleado {
         return result;
     }
 
-    // toString
     @Override
     public String toString() {
         return "Empleado{" +

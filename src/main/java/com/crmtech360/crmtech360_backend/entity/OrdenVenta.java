@@ -7,6 +7,10 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Entidad que representa una orden de venta realizada por un cliente.
+ * Incluye fechas, estado, total, observaciones y sus detalles y órdenes de producción asociadas.
+ */
 @Entity
 @Table(name = "ordenesventa")
 public class OrdenVenta {
@@ -17,7 +21,7 @@ public class OrdenVenta {
     private Integer idOrdenVenta;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_cliente") // ON DELETE CASCADE es manejado por la BD.
+    @JoinColumn(name = "id_cliente")
     private Cliente cliente;
 
     @Column(name = "fecha_pedido", columnDefinition = "TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP", updatable = false)
@@ -27,7 +31,7 @@ public class OrdenVenta {
     private LocalDate fechaEntregaEstimada;
 
     @Column(name = "estado_orden", nullable = false, length = 20)
-    private String estadoOrden; // 'Pendiente', 'Confirmada', 'En Producción', 'Entregada', 'Anulada'
+    private String estadoOrden;
 
     @Column(name = "total_orden", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalOrden;
@@ -41,15 +45,9 @@ public class OrdenVenta {
     @OneToMany(mappedBy = "ordenVenta", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<DetalleOrdenVenta> detallesOrdenVenta;
 
-    @OneToMany(mappedBy = "ordenVenta", fetch = FetchType.LAZY) // ON DELETE SET NULL en BD
+    @OneToMany(mappedBy = "ordenVenta", fetch = FetchType.LAZY)
     private Set<OrdenProduccion> ordenesProduccion;
 
-    // Se ha eliminado la relación con PagoCobro
-    // @OneToMany(mappedBy = "ordenVenta", fetch = FetchType.LAZY) // ON DELETE SET NULL en BD
-    // private Set<PagoCobro> pagosCobros;
-
-
-    // Constructores
     public OrdenVenta() {
     }
 
@@ -63,7 +61,7 @@ public class OrdenVenta {
 
     @PrePersist
     protected void onCreate() {
-        if (fechaPedido == null) { // Permite establecerlo explícitamente si es necesario
+        if (fechaPedido == null) {
             fechaPedido = LocalDateTime.now();
         }
     }
@@ -73,7 +71,6 @@ public class OrdenVenta {
         fechaActualizacion = LocalDateTime.now();
     }
 
-    // Getters y Setters
     public Integer getIdOrdenVenta() {
         return idOrdenVenta;
     }
@@ -154,16 +151,9 @@ public class OrdenVenta {
         this.ordenesProduccion = ordenesProduccion;
     }
 
-    // Se han eliminado los getters y setters para pagosCobros
-    // public Set<PagoCobro> getPagosCobros() {
-    // return pagosCobros;
-    // }
-
-    // public void setPagosCobros(Set<PagoCobro> pagosCobros) {
-    // this.pagosCobros = pagosCobros;
-    // }
-
-    // equals y hashCode
+    /**
+     * Dos órdenes de venta son iguales si tienen el mismo ID.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -177,7 +167,6 @@ public class OrdenVenta {
         return Objects.hash(idOrdenVenta);
     }
 
-    // toString
     @Override
     public String toString() {
         return "OrdenVenta{" +

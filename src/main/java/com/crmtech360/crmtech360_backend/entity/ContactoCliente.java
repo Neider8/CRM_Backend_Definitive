@@ -3,6 +3,10 @@ package com.crmtech360.crmtech360_backend.entity;
 import jakarta.persistence.*;
 import java.util.Objects;
 
+/**
+ * Entidad que representa un contacto asociado a un cliente.
+ * Incluye información de identificación, cargo y datos de contacto.
+ */
 @Entity
 @Table(name = "contactoscliente")
 public class ContactoCliente {
@@ -13,7 +17,7 @@ public class ContactoCliente {
     private Integer idContacto;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_cliente", referencedColumnName = "id_cliente") // No nullable por defecto, FK
+    @JoinColumn(name = "id_cliente", referencedColumnName = "id_cliente")
     private Cliente cliente;
 
     @Column(name = "nombre_contacto", nullable = false, length = 255)
@@ -28,7 +32,6 @@ public class ContactoCliente {
     @Column(name = "correo_contacto", length = 100)
     private String correoContacto;
 
-    // Constructores
     public ContactoCliente() {
     }
 
@@ -40,7 +43,6 @@ public class ContactoCliente {
         this.correoContacto = correoContacto;
     }
 
-    // Getters y Setters
     public Integer getIdContacto() {
         return idContacto;
     }
@@ -89,36 +91,31 @@ public class ContactoCliente {
         this.correoContacto = correoContacto;
     }
 
-    // equals y hashCode
+    /**
+     * Dos contactos son iguales si tienen el mismo ID, o si no está asignado, si coinciden cliente, nombre y correo.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ContactoCliente that = (ContactoCliente) o;
-        // Usa idContacto si está disponible, sino una combinación de campos de negocio
+        if (!(o instanceof ContactoCliente that)) return false;
         if (idContacto != null) {
             return idContacto.equals(that.idContacto);
         }
-        // Si idContacto es nulo (entidad nueva), compara por campos de negocio
-        // Asegúrate de que 'cliente' y su ID se manejen correctamente si es parte de la unicidad antes de guardar.
-        // Para este ejemplo, si el ID es nulo, solo son iguales si son la misma instancia o todos los campos coinciden.
-        // Pero es mejor basarse en ID una vez asignado.
-        return Objects.equals(nombreContacto, that.nombreContacto) &&
-                Objects.equals(correoContacto, that.correoContacto) &&
-                (cliente != null && that.cliente != null && cliente.getIdCliente() != null ? cliente.getIdCliente().equals(that.cliente.getIdCliente()) : cliente == that.cliente) ;
+        return Objects.equals(nombreContacto, that.nombreContacto)
+                && Objects.equals(correoContacto, that.correoContacto)
+                && (cliente != null && that.cliente != null && cliente.getIdCliente() != null
+                    ? cliente.getIdCliente().equals(that.cliente.getIdCliente())
+                    : cliente == that.cliente);
     }
 
     @Override
     public int hashCode() {
-        // Usa idContacto si está disponible
         if (idContacto != null) {
             return Objects.hash(idContacto);
         }
-        // Si idContacto es nulo, usa una combinación de campos de negocio
         return Objects.hash(cliente != null ? cliente.getIdCliente() : null, nombreContacto, correoContacto);
     }
 
-    // toString
     @Override
     public String toString() {
         return "ContactoCliente{" +

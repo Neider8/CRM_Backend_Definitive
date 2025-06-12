@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+/**
+ * Entidad que representa un usuario del sistema.
+ * Incluye la relación con el empleado, credenciales, rol y estado de habilitación.
+ */
 @Entity
 @Table(name = "usuarios")
 public class Usuario {
@@ -13,23 +17,20 @@ public class Usuario {
     @Column(name = "id_usuario")
     private Integer idUsuario;
 
-    // Relación con Empleado (Un Usuario está asociado a un Empleado)
-    // La FK id_empleado es UNIQUE en la tabla Usuarios.
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_empleado", referencedColumnName = "id_empleado", unique = true)
-    // ON DELETE SET NULL es manejado por la BD. JPA lo tratará como opcional.
     private Empleado empleado;
 
     @Column(name = "nombre_usuario", nullable = false, unique = true, length = 50)
     private String nombreUsuario;
 
     @Column(name = "contrasena", nullable = false, length = 255)
-    private String contrasena; // Se almacenará hasheada
+    private String contrasena; // Debe almacenarse hasheada
 
     @Column(name = "rol_usuario", nullable = false, length = 20)
-    private String rolUsuario; // 'Administrador', 'Gerente', 'Operario', 'Ventas'
+    private String rolUsuario;
 
-    @Column(name = "habilitado", nullable = false) // Campo para el estado de habilitación
+    @Column(name = "habilitado", nullable = false)
     private boolean habilitado;
 
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
@@ -38,17 +39,14 @@ public class Usuario {
     @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
 
-    // Constructores
     public Usuario() {
-        // Al crear un usuario, por defecto se asume que está habilitado si no se especifica.
-        // Esto coincide con el DEFAULT true en la definición de la tabla.
         this.habilitado = true;
     }
 
     public Usuario(Empleado empleado, String nombreUsuario, String contrasena, String rolUsuario, boolean habilitado) {
         this.empleado = empleado;
         this.nombreUsuario = nombreUsuario;
-        this.contrasena = contrasena; // La contraseña debe ser hasheada antes de persistir
+        this.contrasena = contrasena;
         this.rolUsuario = rolUsuario;
         this.habilitado = habilitado;
     }
@@ -56,7 +54,7 @@ public class Usuario {
     @PrePersist
     protected void onCreate() {
         fechaCreacion = LocalDateTime.now();
-        if (this.habilitado == false) { // Si por alguna razón no se setea a true en el constructor, se asegura aquí.
+        if (!this.habilitado) {
             this.habilitado = true;
         }
     }
@@ -66,7 +64,6 @@ public class Usuario {
         fechaActualizacion = LocalDateTime.now();
     }
 
-    // Getters y Setters
     public Integer getIdUsuario() {
         return idUsuario;
     }
@@ -107,7 +104,6 @@ public class Usuario {
         this.rolUsuario = rolUsuario;
     }
 
-    // Getter y Setter para 'habilitado'
     public boolean isHabilitado() {
         return habilitado;
     }
@@ -132,7 +128,9 @@ public class Usuario {
         this.fechaActualizacion = fechaActualizacion;
     }
 
-    // equals y hashCode (basado en nombreUsuario si está disponible, sino idUsuario)
+    /**
+     * Dos usuarios son iguales si tienen el mismo nombre de usuario o, en su defecto, el mismo ID.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -159,14 +157,13 @@ public class Usuario {
         return result;
     }
 
-    // toString
     @Override
     public String toString() {
         return "Usuario{" +
                 "idUsuario=" + idUsuario +
                 ", empleadoId=" + (empleado != null ? empleado.getIdEmpleado() : "null") +
                 ", nombreUsuario='" + nombreUsuario + '\'' +
-                ", contrasena='[PROTECTED]'" + // No mostrar la contraseña en el toString
+                ", contrasena='[PROTECTED]'" +
                 ", rolUsuario='" + rolUsuario + '\'' +
                 ", habilitado=" + habilitado +
                 ", fechaCreacion=" + fechaCreacion +

@@ -5,6 +5,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Objects;
 
+/**
+ * Representa una tarea asignada dentro de una orden de producción.
+ * Incluye información sobre el empleado responsable, tiempos y estado de la tarea.
+ */
 @Entity
 @Table(name = "tareasproduccion")
 public class TareaProduccion {
@@ -15,11 +19,11 @@ public class TareaProduccion {
     private Integer idTareaProduccion;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_orden_produccion") // ON DELETE CASCADE en la BD
+    @JoinColumn(name = "id_orden_produccion")
     private OrdenProduccion ordenProduccion;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_empleado") // ON DELETE SET NULL en la BD
+    @JoinColumn(name = "id_empleado")
     private Empleado empleado;
 
     @Column(name = "nombre_tarea", nullable = false, length = 100)
@@ -38,12 +42,11 @@ public class TareaProduccion {
     private LocalTime duracionRealTarea;
 
     @Column(name = "estado_tarea", length = 20)
-    private String estadoTarea; // 'Pendiente', 'En Curso', 'Completada', 'Bloqueada'
+    private String estadoTarea;
 
     @Column(name = "observaciones_tarea", columnDefinition = "TEXT")
     private String observacionesTarea;
 
-    // Constructores
     public TareaProduccion() {
     }
 
@@ -57,7 +60,6 @@ public class TareaProduccion {
         this.observacionesTarea = observacionesTarea;
     }
 
-    // Getters y Setters
     public Integer getIdTareaProduccion() {
         return idTareaProduccion;
     }
@@ -138,7 +140,9 @@ public class TareaProduccion {
         this.observacionesTarea = observacionesTarea;
     }
 
-    // equals y hashCode
+    /**
+     * Dos tareas de producción son iguales si tienen el mismo ID.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -152,7 +156,6 @@ public class TareaProduccion {
         return Objects.hash(idTareaProduccion);
     }
 
-    // toString
     @Override
     public String toString() {
         return "TareaProduccion{" +

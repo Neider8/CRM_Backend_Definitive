@@ -1,6 +1,6 @@
 package com.crmtech360.crmtech360_backend.controller;
 
-import com.crmtech360.crmtech360_backend.dto.ApiErrorResponseDTO; // Asegúrate de tener este DTO para los errores
+import com.crmtech360.crmtech360_backend.dto.ApiErrorResponseDTO;
 import com.crmtech360.crmtech360_backend.dto.EmpleadoCreateRequestDTO;
 import com.crmtech360.crmtech360_backend.dto.EmpleadoResponseDTO;
 import com.crmtech360.crmtech360_backend.dto.EmpleadoUpdateRequestDTO;
@@ -17,7 +17,6 @@ import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -25,10 +24,14 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 
+/**
+ * Controlador para la gestión de empleados.
+ * Permite registrar, consultar, actualizar y eliminar empleados del sistema.
+ */
 @RestController
 @RequestMapping("/api/v1/empleados")
-@Tag(name = "Empleados", description = "API para la gestión de empleados del sistema.")
-@SecurityRequirement(name = "bearerAuth") // Requiere autenticación JWT para todos los endpoints aquí
+@Tag(name = "Empleados", description = "Operaciones para la administración de empleados.")
+@SecurityRequirement(name = "bearerAuth")
 public class EmpleadoController {
 
     private final EmpleadoService empleadoService;
@@ -37,19 +40,17 @@ public class EmpleadoController {
         this.empleadoService = empleadoService;
     }
 
-    @Operation(summary = "Crear un nuevo empleado",
-            description = "Registra un nuevo empleado en el sistema. El número de documento debe ser único. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE o permiso PERMISO_CREAR_EMPLEADOS.")
+    /**
+     * Crea un nuevo empleado.
+     * El número de documento debe ser único.
+     */
+    @Operation(summary = "Crear empleado", description = "Registra un nuevo empleado en el sistema.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Empleado creado exitosamente.",
+            @ApiResponse(responseCode = "201", description = "Empleado creado.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = EmpleadoResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Solicitud inválida debido a datos incorrectos (ej. validación fallida).",
+            @ApiResponse(responseCode = "400", description = "Datos inválidos.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "401", description = "No Autorizado - Se requiere token JWT o token inválido.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "403", description = "Prohibido - El usuario no tiene los permisos necesarios.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "409", description = "Conflicto - Ya existe un empleado con el mismo número de documento.",
+            @ApiResponse(responseCode = "409", description = "Empleado ya existe.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class)))
     })
     @PostMapping
@@ -63,97 +64,82 @@ public class EmpleadoController {
         return ResponseEntity.created(location).body(createdEmpleado);
     }
 
-    @Operation(summary = "Obtener todos los empleados (paginado)",
-            description = "Devuelve una lista paginada de todos los empleados. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE o permiso PERMISO_VER_EMPLEADOS.")
+    /**
+     * Devuelve una lista paginada de empleados.
+     */
+    @Operation(summary = "Listar empleados", description = "Obtiene todos los empleados registrados, con paginación.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de empleados obtenida exitosamente.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))), //Page<EmpleadoResponseDTO>
-            @ApiResponse(responseCode = "401", description = "No Autorizado.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "403", description = "Prohibido.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class)))
+            @ApiResponse(responseCode = "200", description = "Lista de empleados obtenida.")
     })
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE') or hasAuthority('PERMISO_VER_EMPLEADOS')")
     public ResponseEntity<Page<EmpleadoResponseDTO>> getAllEmpleados(
-            @Parameter(description = "Configuración de paginación (ej. page=0&size=10&sort=nombreEmpleado,asc)")
-            @PageableDefault(size = 10, sort = "nombreEmpleado") Pageable pageable) {
+            @Parameter(description = "Parámetros de paginación") @PageableDefault(size = 10, sort = "nombreEmpleado") Pageable pageable) {
         Page<EmpleadoResponseDTO> empleados = empleadoService.findAllEmpleados(pageable);
         return ResponseEntity.ok(empleados);
     }
 
-    @Operation(summary = "Obtener un empleado por su ID",
-            description = "Devuelve los detalles de un empleado específico. " +
-                    "Puede ser accedido por ADMINISTRADOR, GERENTE, alguien con PERMISO_VER_EMPLEADOS, o el propio usuario si el empleado está vinculado a su cuenta.")
+    /**
+     * Consulta un empleado por su ID.
+     */
+    @Operation(summary = "Buscar empleado por ID", description = "Devuelve los datos de un empleado específico.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Empleado encontrado.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = EmpleadoResponseDTO.class))),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
-            @ApiResponse(responseCode = "404", description = "Empleado no encontrado.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class)))
+            @ApiResponse(responseCode = "200", description = "Empleado encontrado."),
+            @ApiResponse(responseCode = "404", description = "Empleado no encontrado.")
     })
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE') or hasAuthority('PERMISO_VER_EMPLEADOS') or @userSecurity.isEmployeeSelf(authentication, #id)")
     public ResponseEntity<EmpleadoResponseDTO> getEmpleadoById(
-            @Parameter(description = "ID del empleado a obtener.", required = true, example = "1") @PathVariable Integer id) {
+            @Parameter(description = "ID del empleado", required = true, example = "1") @PathVariable Integer id) {
         EmpleadoResponseDTO empleado = empleadoService.findEmpleadoById(id);
         return ResponseEntity.ok(empleado);
     }
 
-    @Operation(summary = "Obtener un empleado por su número de documento",
-            description = "Devuelve los detalles de un empleado específico basado en su número de documento. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE o permiso PERMISO_VER_EMPLEADOS.")
+    /**
+     * Consulta un empleado por su número de documento.
+     */
+    @Operation(summary = "Buscar empleado por documento", description = "Busca un empleado usando su número de documento.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Empleado encontrado.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = EmpleadoResponseDTO.class))),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
+            @ApiResponse(responseCode = "200", description = "Empleado encontrado."),
             @ApiResponse(responseCode = "404", description = "Empleado no encontrado.")
     })
     @GetMapping("/documento/{numeroDocumento}")
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE') or hasAuthority('PERMISO_VER_EMPLEADOS')")
     public ResponseEntity<EmpleadoResponseDTO> getEmpleadoByNumeroDocumento(
-            @Parameter(description = "Número de documento del empleado.", required = true, example = "10203040") @PathVariable String numeroDocumento) {
+            @Parameter(description = "Número de documento", required = true, example = "10203040") @PathVariable String numeroDocumento) {
         EmpleadoResponseDTO empleado = empleadoService.findEmpleadoByNumeroDocumento(numeroDocumento);
         return ResponseEntity.ok(empleado);
     }
 
-    @Operation(summary = "Actualizar un empleado existente",
-            description = "Permite modificar los detalles de un empleado existente. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE o permiso PERMISO_EDITAR_EMPLEADOS.")
+    /**
+     * Actualiza los datos de un empleado existente.
+     */
+    @Operation(summary = "Actualizar empleado", description = "Modifica los datos de un empleado existente.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Empleado actualizado exitosamente.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = EmpleadoResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Solicitud inválida."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
+            @ApiResponse(responseCode = "200", description = "Empleado actualizado."),
             @ApiResponse(responseCode = "404", description = "Empleado no encontrado.")
     })
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE') or hasAuthority('PERMISO_EDITAR_EMPLEADOS')")
     public ResponseEntity<EmpleadoResponseDTO> updateEmpleado(
-            @Parameter(description = "ID del empleado a actualizar.", required = true) @PathVariable Integer id,
+            @Parameter(description = "ID del empleado", required = true) @PathVariable Integer id,
             @Valid @RequestBody EmpleadoUpdateRequestDTO empleadoUpdateRequestDTO) {
         EmpleadoResponseDTO updatedEmpleado = empleadoService.updateEmpleado(id, empleadoUpdateRequestDTO);
         return ResponseEntity.ok(updatedEmpleado);
     }
 
-    @Operation(summary = "Eliminar un empleado por su ID",
-            description = "Elimina un empleado del sistema. Esta acción puede tener implicaciones si el empleado está asociado a usuarios o tareas. " +
-                    "Requiere rol ADMINISTRADOR o permiso PERMISO_ELIMINAR_EMPLEADOS.")
+    /**
+     * Elimina un empleado por su ID.
+     */
+    @Operation(summary = "Eliminar empleado", description = "Elimina un empleado del sistema. Esta acción es irreversible.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Empleado eliminado exitosamente."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
-            @ApiResponse(responseCode = "404", description = "Empleado no encontrado."),
-            @ApiResponse(responseCode = "409", description = "Conflicto, el empleado no se puede eliminar (ej. está vinculado a un usuario activo o tareas).")
+            @ApiResponse(responseCode = "204", description = "Empleado eliminado."),
+            @ApiResponse(responseCode = "404", description = "Empleado no encontrado.")
     })
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR') or hasAuthority('PERMISO_ELIMINAR_EMPLEADOS')")
     public ResponseEntity<Void> deleteEmpleado(
-            @Parameter(description = "ID del empleado a eliminar.", required = true) @PathVariable Integer id) {
+            @Parameter(description = "ID del empleado", required = true) @PathVariable Integer id) {
         empleadoService.deleteEmpleado(id);
         return ResponseEntity.noContent().build();
     }

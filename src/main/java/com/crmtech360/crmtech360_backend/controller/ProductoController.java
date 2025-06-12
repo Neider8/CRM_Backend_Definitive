@@ -1,6 +1,6 @@
 package com.crmtech360.crmtech360_backend.controller;
 
-import com.crmtech360.crmtech360_backend.dto.*; // Asegúrate que ApiErrorResponseDTO esté aquí
+import com.crmtech360.crmtech360_backend.dto.*;
 import com.crmtech360.crmtech360_backend.service.ProductoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,6 +25,10 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.List;
 
+/**
+ * Controlador para la gestión de productos terminados y su lista de materiales (BOM).
+ * Permite registrar, consultar, actualizar y eliminar productos, así como administrar sus insumos asociados.
+ */
 @RestController
 @RequestMapping("/api/v1/productos")
 @Tag(name = "Productos", description = "API para la gestión de productos terminados y su lista de materiales (BOM).")
@@ -37,17 +41,17 @@ public class ProductoController {
         this.productoService = productoService;
     }
 
+    /**
+     * Crea un nuevo producto terminado.
+     */
     @Operation(summary = "Crear un nuevo producto",
-            description = "Registra un nuevo producto terminado en el sistema. La referencia del producto debe ser única. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE o permiso PERMISO_CREAR_PRODUCTOS.")
+            description = "Registra un nuevo producto terminado. La referencia debe ser única.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Producto creado exitosamente.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductoResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Solicitud inválida (ej. referencia duplicada, datos faltantes).",
+            @ApiResponse(responseCode = "400", description = "Solicitud inválida.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
-            @ApiResponse(responseCode = "409", description = "Conflicto - Ya existe un producto con la misma referencia.",
+            @ApiResponse(responseCode = "409", description = "Ya existe un producto con la misma referencia.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class)))
     })
     @PostMapping
@@ -61,68 +65,72 @@ public class ProductoController {
         return ResponseEntity.created(location).body(createdProducto);
     }
 
+    /**
+     * Devuelve una lista paginada de productos terminados.
+     */
     @Operation(summary = "Obtener todos los productos (paginado)",
-            description = "Devuelve una lista paginada de todos los productos terminados. Accesible por cualquier usuario autenticado.")
+            description = "Devuelve una lista paginada de todos los productos terminados.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de productos obtenida exitosamente.",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Page.class))), // Page<ProductoResponseDTO>
-            @ApiResponse(responseCode = "401", description = "No Autorizado.")
+            @ApiResponse(responseCode = "200", description = "Lista de productos obtenida exitosamente.")
     })
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Page<ProductoResponseDTO>> getAllProductos(
-            @Parameter(description = "Configuración de paginación (ej. page=0&size=10&sort=nombreProducto,asc)")
+            @Parameter(description = "Configuración de paginación") 
             @PageableDefault(size = 10, sort = "nombreProducto") Pageable pageable) {
         Page<ProductoResponseDTO> productos = productoService.findAllProductos(pageable);
         return ResponseEntity.ok(productos);
     }
 
+    /**
+     * Consulta un producto por su ID.
+     */
     @Operation(summary = "Obtener un producto por su ID",
-            description = "Devuelve los detalles de un producto específico, incluyendo su BOM si está disponible. Accesible por cualquier usuario autenticado.")
+            description = "Devuelve los detalles de un producto específico, incluyendo su BOM si está disponible.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Producto encontrado.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductoResponseDTO.class))),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
             @ApiResponse(responseCode = "404", description = "Producto no encontrado.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class)))
     })
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ProductoResponseDTO> getProductoById(
-            @Parameter(description = "ID del producto a obtener.", required = true, example = "1") @PathVariable Integer id) {
+            @Parameter(description = "ID del producto a obtener.", required = true) @PathVariable Integer id) {
         ProductoResponseDTO producto = productoService.findProductoById(id);
         return ResponseEntity.ok(producto);
     }
 
+    /**
+     * Consulta un producto por su referencia única.
+     */
     @Operation(summary = "Obtener un producto por su referencia",
-            description = "Devuelve los detalles de un producto específico basado en su referencia única. Accesible por cualquier usuario autenticado.")
+            description = "Devuelve los detalles de un producto específico basado en su referencia única.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Producto encontrado.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductoResponseDTO.class))),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
             @ApiResponse(responseCode = "404", description = "Producto no encontrado.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class)))
     })
     @GetMapping("/referencia/{referencia}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ProductoResponseDTO> getProductoByReferencia(
-            @Parameter(description = "Referencia única del producto.", required = true, example = "CAM-001") @PathVariable String referencia) {
+            @Parameter(description = "Referencia única del producto.", required = true) @PathVariable String referencia) {
         ProductoResponseDTO producto = productoService.findProductoByReferencia(referencia);
         return ResponseEntity.ok(producto);
     }
 
+    /**
+     * Actualiza los datos de un producto existente.
+     */
     @Operation(summary = "Actualizar un producto existente",
-            description = "Permite modificar los detalles de un producto. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE o permiso PERMISO_EDITAR_PRODUCTOS.")
+            description = "Permite modificar los detalles de un producto.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Producto actualizado exitosamente.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProductoResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Solicitud inválida."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
             @ApiResponse(responseCode = "404", description = "Producto no encontrado.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "409", description = "Conflicto, la nueva referencia ya existe para otro producto.",
+            @ApiResponse(responseCode = "409", description = "La nueva referencia ya existe para otro producto.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class)))
     })
     @PutMapping("/{id}")
@@ -134,16 +142,16 @@ public class ProductoController {
         return ResponseEntity.ok(updatedProducto);
     }
 
+    /**
+     * Elimina un producto por su ID.
+     */
     @Operation(summary = "Eliminar un producto por su ID",
-            description = "Elimina un producto del sistema. Puede fallar si el producto está en uso (ej. órdenes de venta, inventario). " +
-                    "Requiere rol ADMINISTRADOR o permiso PERMISO_ELIMINAR_PRODUCTOS.")
+            description = "Elimina un producto del sistema. Puede fallar si el producto está en uso.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Producto eliminado exitosamente."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
             @ApiResponse(responseCode = "404", description = "Producto no encontrado.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "409", description = "Conflicto - El producto no se puede eliminar (está en uso).",
+            @ApiResponse(responseCode = "409", description = "El producto no se puede eliminar (está en uso).",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class)))
     })
     @DeleteMapping("/{id}")
@@ -154,19 +162,18 @@ public class ProductoController {
         return ResponseEntity.noContent().build();
     }
 
-    // --- Endpoints para Lista de Materiales (BOM - Insumos por Producto) ---
+    // --- Endpoints para Lista de Materiales (BOM) ---
 
+    /**
+     * Agrega un insumo a la lista de materiales (BOM) de un producto.
+     */
     @Operation(summary = "Añadir un insumo a la lista de materiales (BOM) de un producto",
-            description = "Agrega un insumo con su cantidad requerida al BOM de un producto. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE o permiso PERMISO_GESTIONAR_BOM.")
+            description = "Agrega un insumo con su cantidad requerida al BOM de un producto.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Insumo añadido al BOM exitosamente.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = InsumoPorProductoResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Solicitud inválida (ej. producto o insumo no existe, insumo ya en BOM)."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
             @ApiResponse(responseCode = "404", description = "Producto o Insumo no encontrado."),
-            @ApiResponse(responseCode = "409", description = "Conflicto, el insumo ya forma parte del BOM de este producto.")
+            @ApiResponse(responseCode = "409", description = "El insumo ya forma parte del BOM de este producto.")
     })
     @PostMapping("/{idProducto}/bom")
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'GERENTE') or hasAuthority('PERMISO_GESTIONAR_BOM')")
@@ -174,18 +181,16 @@ public class ProductoController {
             @Parameter(description = "ID del producto al que se añade el insumo.", required = true) @PathVariable Integer idProducto,
             @Valid @RequestBody InsumoPorProductoRequestDTO bomItemDto) {
         InsumoPorProductoResponseDTO createdBomItem = productoService.addInsumoToProducto(idProducto, bomItemDto);
-        // URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("?idInsumo={idInsumo}").buildAndExpand(createdBomItem.getIdInsumo()).toUri();
-        // Devolver 201 con el cuerpo es suficiente para este tipo de sub-recurso.
         return ResponseEntity.status(HttpStatus.CREATED).body(createdBomItem);
     }
 
-    @Operation(summary = "Obtener la lista de materiales (BOM) completa para un producto",
-            description = "Devuelve todos los insumos y sus cantidades requeridas para fabricar un producto. Accesible por cualquier usuario autenticado.")
+    /**
+     * Devuelve la lista de materiales (BOM) de un producto.
+     */
+    @Operation(summary = "Obtener la lista de materiales (BOM) de un producto",
+            description = "Devuelve todos los insumos y sus cantidades requeridas para fabricar un producto.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "BOM del producto obtenida exitosamente.",
-                    content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = InsumoPorProductoResponseDTO.class)))),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "404", description = "Producto no encontrado.")
+            @ApiResponse(responseCode = "200", description = "BOM del producto obtenida exitosamente.")
     })
     @GetMapping("/{idProducto}/bom")
     @PreAuthorize("isAuthenticated()")
@@ -195,15 +200,14 @@ public class ProductoController {
         return ResponseEntity.ok(bom);
     }
 
+    /**
+     * Actualiza la cantidad de un insumo en el BOM de un producto.
+     */
     @Operation(summary = "Actualizar la cantidad de un insumo en el BOM de un producto",
-            description = "Modifica la cantidad requerida de un insumo específico en el BOM de un producto. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE o permiso PERMISO_GESTIONAR_BOM.")
+            description = "Modifica la cantidad requerida de un insumo específico en el BOM de un producto.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Cantidad del insumo en BOM actualizada.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = InsumoPorProductoResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Solicitud inválida (ej. cantidad negativa)."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
             @ApiResponse(responseCode = "404", description = "Producto o Insumo no encontrado en el BOM.")
     })
     @PutMapping("/{idProducto}/bom/{idInsumo}")
@@ -211,18 +215,18 @@ public class ProductoController {
     public ResponseEntity<InsumoPorProductoResponseDTO> updateInsumoInProductoBOM(
             @Parameter(description = "ID del producto.", required = true) @PathVariable Integer idProducto,
             @Parameter(description = "ID del insumo a actualizar en el BOM.", required = true) @PathVariable Integer idInsumo,
-            @Valid @RequestBody InsumoPorProductoRequestDTO bomItemDto) { // bomItemDto aquí solo debería llevar cantidadRequerida
+            @Valid @RequestBody InsumoPorProductoRequestDTO bomItemDto) {
         InsumoPorProductoResponseDTO updatedBomItem = productoService.updateInsumoInProducto(idProducto, idInsumo, bomItemDto);
         return ResponseEntity.ok(updatedBomItem);
     }
 
+    /**
+     * Elimina un insumo del BOM de un producto.
+     */
     @Operation(summary = "Eliminar un insumo del BOM de un producto",
-            description = "Quita un insumo de la lista de materiales de un producto. " +
-                    "Requiere rol ADMINISTRADOR, GERENTE o permiso PERMISO_GESTIONAR_BOM.")
+            description = "Quita un insumo de la lista de materiales de un producto.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Insumo eliminado del BOM exitosamente."),
-            @ApiResponse(responseCode = "401", description = "No Autorizado."),
-            @ApiResponse(responseCode = "403", description = "Prohibido."),
             @ApiResponse(responseCode = "404", description = "Producto o Insumo no encontrado en el BOM.")
     })
     @DeleteMapping("/{idProducto}/bom/{idInsumo}")

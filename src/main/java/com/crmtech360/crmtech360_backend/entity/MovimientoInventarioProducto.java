@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+/**
+ * Entidad que representa un movimiento de entrada o salida en el inventario de productos terminados.
+ * Permite registrar la cantidad, tipo de movimiento y una descripción opcional.
+ */
 @Entity
 @Table(name = "movimientosinventarioproductos")
 public class MovimientoInventarioProducto {
@@ -14,10 +18,10 @@ public class MovimientoInventarioProducto {
     private Integer idMovimientoProducto;
 
     @Column(name = "tipo_movimiento", nullable = false, length = 10)
-    private String tipoMovimiento; // 'Entrada', 'Salida'
+    private String tipoMovimiento; // 'Entrada' o 'Salida'
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_inventario_producto", nullable = false) // ON DELETE CASCADE en la BD
+    @JoinColumn(name = "id_inventario_producto", nullable = false)
     private InventarioProducto inventarioProducto;
 
     @Column(name = "cantidad_movimiento", nullable = false)
@@ -29,7 +33,6 @@ public class MovimientoInventarioProducto {
     @Column(name = "descripcion_movimiento", columnDefinition = "TEXT")
     private String descripcionMovimiento;
 
-    // Constructores
     public MovimientoInventarioProducto() {
     }
 
@@ -47,7 +50,6 @@ public class MovimientoInventarioProducto {
         }
     }
 
-    // Getters y Setters
     public Integer getIdMovimientoProducto() {
         return idMovimientoProducto;
     }
@@ -96,7 +98,9 @@ public class MovimientoInventarioProducto {
         this.descripcionMovimiento = descripcionMovimiento;
     }
 
-    // equals y hashCode
+    /**
+     * Dos movimientos son iguales si tienen el mismo ID.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -110,7 +114,6 @@ public class MovimientoInventarioProducto {
         return Objects.hash(idMovimientoProducto);
     }
 
-    // toString
     @Override
     public String toString() {
         return "MovimientoInventarioProducto{" +

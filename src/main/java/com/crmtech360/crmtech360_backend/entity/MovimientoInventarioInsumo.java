@@ -5,6 +5,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+/**
+ * Entidad que representa un movimiento de entrada o salida en el inventario de insumos.
+ * Permite registrar la cantidad, tipo de movimiento y una descripción opcional.
+ */
 @Entity
 @Table(name = "movimientosinventarioinsumos")
 public class MovimientoInventarioInsumo {
@@ -15,10 +19,10 @@ public class MovimientoInventarioInsumo {
     private Integer idMovimientoInsumo;
 
     @Column(name = "tipo_movimiento", nullable = false, length = 10)
-    private String tipoMovimiento; // 'Entrada', 'Salida'
+    private String tipoMovimiento; // 'Entrada' o 'Salida'
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_inventario_insumo", nullable = false) // ON DELETE CASCADE en la BD
+    @JoinColumn(name = "id_inventario_insumo", nullable = false)
     private InventarioInsumo inventarioInsumo;
 
     @Column(name = "cantidad_movimiento", nullable = false, precision = 10, scale = 3)
@@ -30,7 +34,6 @@ public class MovimientoInventarioInsumo {
     @Column(name = "descripcion_movimiento", columnDefinition = "TEXT")
     private String descripcionMovimiento;
 
-    // Constructores
     public MovimientoInventarioInsumo() {
     }
 
@@ -48,7 +51,6 @@ public class MovimientoInventarioInsumo {
         }
     }
 
-    // Getters y Setters
     public Integer getIdMovimientoInsumo() {
         return idMovimientoInsumo;
     }
@@ -97,7 +99,9 @@ public class MovimientoInventarioInsumo {
         this.descripcionMovimiento = descripcionMovimiento;
     }
 
-    // equals y hashCode
+    /**
+     * Dos movimientos son iguales si tienen el mismo ID.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -111,7 +115,6 @@ public class MovimientoInventarioInsumo {
         return Objects.hash(idMovimientoInsumo);
     }
 
-    // toString
     @Override
     public String toString() {
         return "MovimientoInventarioInsumo{" +

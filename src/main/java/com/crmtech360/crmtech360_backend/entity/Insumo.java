@@ -5,6 +5,10 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Entidad que representa un insumo utilizado en la producción.
+ * Incluye información básica, unidad de medida, stock mínimo y relaciones con productos y compras.
+ */
 @Entity
 @Table(name = "insumos")
 public class Insumo {
@@ -41,10 +45,8 @@ public class Insumo {
     @OneToMany(mappedBy = "insumo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<InventarioInsumo> inventariosInsumo;
 
-
-    // Constructores
     public Insumo() {
-        this.stockMinimoInsumo = 0; // Valor por defecto
+        this.stockMinimoInsumo = 0;
     }
 
     public Insumo(String nombreInsumo, String descripcionInsumo, String unidadMedidaInsumo, Integer stockMinimoInsumo) {
@@ -67,7 +69,6 @@ public class Insumo {
         fechaActualizacion = LocalDateTime.now();
     }
 
-    // Getters y Setters
     public Integer getIdInsumo() {
         return idInsumo;
     }
@@ -148,7 +149,9 @@ public class Insumo {
         this.inventariosInsumo = inventariosInsumo;
     }
 
-    // equals y hashCode (basado en nombreInsumo si está disponible, sino idInsumo)
+    /**
+     * Dos insumos son iguales si tienen el mismo nombre o, en su defecto, el mismo ID.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -175,7 +178,6 @@ public class Insumo {
         return result;
     }
 
-    // toString
     @Override
     public String toString() {
         return "Insumo{" +

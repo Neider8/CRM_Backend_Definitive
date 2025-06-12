@@ -5,6 +5,10 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Entidad que representa a un cliente de la empresa.
+ * Incluye datos de identificación, contacto y relaciones con contactos y órdenes de venta.
+ */
 @Entity
 @Table(name = "clientes")
 public class Cliente {
@@ -44,8 +48,6 @@ public class Cliente {
     @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<OrdenVenta> ordenesVenta;
 
-
-    // Constructores
     public Cliente() {
     }
 
@@ -68,7 +70,6 @@ public class Cliente {
         fechaActualizacion = LocalDateTime.now();
     }
 
-    // Getters y Setters
     public Integer getIdCliente() {
         return idCliente;
     }
@@ -157,38 +158,35 @@ public class Cliente {
         this.ordenesVenta = ordenesVenta;
     }
 
-    // equals y hashCode (basado en numeroDocumento si está disponible, sino idCliente)
+    /**
+     * Dos clientes son iguales si tienen el mismo número de documento o, en su defecto, el mismo ID.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Cliente cliente = (Cliente) o;
         if (numeroDocumento != null ? !numeroDocumento.equals(cliente.numeroDocumento) : cliente.numeroDocumento != null) {
-            // Si numeroDocumento es diferente (y no nulo en ambos), verificar id si numeroDocumento es nulo en uno
-            if (numeroDocumento == null || cliente.numeroDocumento == null) { // Uno de ellos es nulo, el otro no (ya que el primer if falló)
+            if (numeroDocumento == null || cliente.numeroDocumento == null) {
                 return idCliente != null && idCliente.equals(cliente.idCliente);
             }
             return false;
         }
-        // Si numeroDocumento es igual (o ambos nulos), y si son nulos, usar id
         if (numeroDocumento == null && cliente.numeroDocumento == null) {
             return idCliente != null && idCliente.equals(cliente.idCliente);
         }
-        return true; // numeroDocumento es igual y no nulo
+        return true;
     }
 
     @Override
     public int hashCode() {
         int result = numeroDocumento != null ? numeroDocumento.hashCode() : 0;
-        // Si numeroDocumento es nulo, basar el hash en el ID para diferenciar instancias no guardadas vs guardadas
         if (numeroDocumento == null) {
             result = 31 * result + (idCliente != null ? idCliente.hashCode() : 0);
         }
         return result;
     }
 
-
-    // toString
     @Override
     public String toString() {
         return "Cliente{" +

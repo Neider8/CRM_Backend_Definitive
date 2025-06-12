@@ -6,6 +6,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repositorio para gestionar insumos y realizar búsquedas por nombre, unidad de medida y stock mínimo.
+ */
 @Repository
 public interface InsumoRepository extends JpaRepository<Insumo, Integer> {
     Optional<Insumo> findByNombreInsumoIgnoreCase(String nombreInsumo);

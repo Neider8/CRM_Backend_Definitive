@@ -6,6 +6,10 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Entidad que representa un producto terminado fabricado por la empresa.
+ * Incluye información de referencia, características, costos y relaciones con ventas, inventario y materiales.
+ */
 @Entity
 @Table(name = "productos")
 public class Producto {
@@ -60,9 +64,8 @@ public class Producto {
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<InventarioProducto> inventariosProducto;
 
-    // Constructores
     public Producto() {
-        this.unidadMedidaProducto = "Unidad"; // Valor por defecto
+        this.unidadMedidaProducto = "Unidad";
     }
 
     public Producto(String referenciaProducto, String nombreProducto, String descripcionProducto, String tallaProducto, String colorProducto, String tipoProducto, String generoProducto, BigDecimal costoProduccion, BigDecimal precioVenta, String unidadMedidaProducto) {
@@ -91,7 +94,6 @@ public class Producto {
         fechaActualizacion = LocalDateTime.now();
     }
 
-    // Getters y Setters
     public Integer getIdProducto() {
         return idProducto;
     }
@@ -220,7 +222,9 @@ public class Producto {
         this.inventariosProducto = inventariosProducto;
     }
 
-    // equals y hashCode (basado en referenciaProducto si está disponible, sino idProducto)
+    /**
+     * Dos productos son iguales si tienen la misma referencia o, en su defecto, el mismo ID.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -247,7 +251,6 @@ public class Producto {
         return result;
     }
 
-    // toString
     @Override
     public String toString() {
         return "Producto{" +

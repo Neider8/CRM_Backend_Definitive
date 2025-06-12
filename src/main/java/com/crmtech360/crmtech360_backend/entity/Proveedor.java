@@ -5,6 +5,10 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Entidad que representa a un proveedor de la empresa.
+ * Incluye datos de identificación, contacto y relación con órdenes de compra.
+ */
 @Entity
 @Table(name = "proveedores")
 public class Proveedor {
@@ -44,7 +48,6 @@ public class Proveedor {
     @OneToMany(mappedBy = "proveedor", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<OrdenCompra> ordenesCompra;
 
-    // Constructores
     public Proveedor() {
     }
 
@@ -68,7 +71,6 @@ public class Proveedor {
         fechaActualizacion = LocalDateTime.now();
     }
 
-    // Getters y Setters
     public Integer getIdProveedor() {
         return idProveedor;
     }
@@ -157,8 +159,9 @@ public class Proveedor {
         this.ordenesCompra = ordenesCompra;
     }
 
-
-    // equals y hashCode (basado en nitProveedor si está disponible, sino idProveedor)
+    /**
+     * Dos proveedores son iguales si tienen el mismo NIT o, en su defecto, el mismo ID.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -185,7 +188,6 @@ public class Proveedor {
         return result;
     }
 
-    // toString
     @Override
     public String toString() {
         return "Proveedor{" +

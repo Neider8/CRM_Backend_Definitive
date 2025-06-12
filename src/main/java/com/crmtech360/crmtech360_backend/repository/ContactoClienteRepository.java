@@ -7,6 +7,10 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repositorio para acceder y gestionar los contactos de clientes.
+ * Permite búsquedas por cliente, nombre, correo, teléfono y cargo.
+ */
 @Repository
 public interface ContactoClienteRepository extends JpaRepository<ContactoCliente, Integer> {
     List<ContactoCliente> findByCliente(Cliente cliente);

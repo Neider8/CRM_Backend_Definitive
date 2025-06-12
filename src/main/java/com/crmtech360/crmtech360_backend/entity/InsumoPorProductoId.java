@@ -5,10 +5,14 @@ import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
 
+/**
+ * ID compuesto para la relación entre producto e insumo en la lista de materiales (BOM).
+ * Incluye el identificador del producto y el del insumo.
+ */
 @Embeddable
 public class InsumoPorProductoId implements Serializable {
 
-    private static final long serialVersionUID = 1L; // Importante para Serializable
+    private static final long serialVersionUID = 1L;
 
     @Column(name = "id_producto")
     private Integer idProducto;
@@ -16,7 +20,6 @@ public class InsumoPorProductoId implements Serializable {
     @Column(name = "id_insumo")
     private Integer idInsumo;
 
-    // Constructores
     public InsumoPorProductoId() {
     }
 
@@ -25,7 +28,6 @@ public class InsumoPorProductoId implements Serializable {
         this.idInsumo = idInsumo;
     }
 
-    // Getters y Setters
     public Integer getIdProducto() {
         return idProducto;
     }
@@ -42,7 +44,9 @@ public class InsumoPorProductoId implements Serializable {
         this.idInsumo = idInsumo;
     }
 
-    // equals y hashCode
+    /**
+     * Dos IDs son iguales si coinciden producto e insumo.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

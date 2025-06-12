@@ -9,11 +9,15 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repositorio para gestionar la relación entre productos y sus insumos.
+ * Permite búsquedas por producto, insumo y por partes del ID compuesto.
+ */
 @Repository
 public interface InsumoPorProductoRepository extends JpaRepository<InsumoPorProducto, InsumoPorProductoId> {
     List<InsumoPorProducto> findByProducto(Producto producto);
-    List<InsumoPorProducto> findByIdIdProducto(Integer idProducto); // Buscar por la parte del ID compuesto
+    List<InsumoPorProducto> findByIdIdProducto(Integer idProducto);
     List<InsumoPorProducto> findByInsumo(Insumo insumo);
-    List<InsumoPorProducto> findByIdIdInsumo(Integer idInsumo); // Buscar por la parte del ID compuesto
+    List<InsumoPorProducto> findByIdIdInsumo(Integer idInsumo);
     Optional<InsumoPorProducto> findByProductoAndInsumo(Producto producto, Insumo insumo);
 }

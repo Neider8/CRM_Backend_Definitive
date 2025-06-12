@@ -23,7 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.DisabledException; // Importar DisabledException
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,9 +36,13 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 
+/**
+ * Controlador para la autenticación y registro de usuarios.
+ * Permite iniciar sesión y registrar nuevos usuarios en el sistema.
+ */
 @RestController
 @RequestMapping("/api/v1/auth")
-@Tag(name = "Autenticación", description = "API para la autenticación de usuarios, registro y gestión de tokens JWT.")
+@Tag(name = "Autenticación", description = "Operaciones de login y registro de usuarios.")
 public class AuthController {
 
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
@@ -46,8 +50,6 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final UsuarioService usuarioService;
-    // UserDetailsServiceImpl es inyectado a través del constructor pero no necesita ser un campo
-    // si no se usa directamente en los métodos de esta clase, más allá de la configuración de Spring Security.
 
     @Autowired
     public AuthController(AuthenticationManager authenticationManager,
@@ -59,17 +61,19 @@ public class AuthController {
         this.usuarioService = usuarioService;
     }
 
+    /**
+     * Permite a un usuario autenticarse y obtener un token JWT si las credenciales son válidas.
+     */
     @Operation(summary = "Autenticar usuario y obtener token JWT",
-            description = "Proporciona nombre de usuario y contraseña para obtener un token de acceso. " +
-                    "Este endpoint es público y no requiere autenticación previa.")
+            description = "Recibe usuario y contraseña, y retorna un token JWT si la autenticación es exitosa.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Autenticación exitosa, token JWT generado.",
+            @ApiResponse(responseCode = "200", description = "Autenticación exitosa.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = JwtResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Solicitud de login inválida (ej. campos vacíos).",
+            @ApiResponse(responseCode = "400", description = "Solicitud inválida.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "401", description = "Credenciales inválidas (no autorizado) o usuario no habilitado.", // <--- Actualizar descripción
+            @ApiResponse(responseCode = "401", description = "Credenciales inválidas o usuario deshabilitado.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "500", description = "Error interno del servidor durante la autenticación.",
+            @ApiResponse(responseCode = "500", description = "Error interno del servidor.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class)))
     })
     @PostMapping("/login")
@@ -86,11 +90,9 @@ public class AuthController {
             SecurityContextHolder.getContext().setAuthentication(authentication);
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-            // *** Obtener el estado 'habilitado' del usuario ***
             UsuarioResponseDTO usuarioInfo = usuarioService.findUsuarioByNombreUsuario(userDetails.getUsername());
 
-            // Si el usuario no está habilitado, lanzar una excepción
-            if (!usuarioInfo.isHabilitado()) { // Asumiendo que UsuarioResponseDTO tiene un método isHabilitado()
+            if (!usuarioInfo.isHabilitado()) {
                 log.warn("Intento de login fallido: El usuario {} no está habilitado.", userDetails.getUsername());
                 throw new DisabledException("Su usuario no está habilitado. Por favor, contacte a soporte.");
             }
@@ -103,7 +105,7 @@ public class AuthController {
                     usuarioInfo.getIdUsuario(),
                     userDetails.getUsername(),
                     usuarioInfo.getRolUsuario(),
-                    usuarioInfo.isHabilitado() // <--- AÑADIDO: Incluir el estado de habilitación
+                    usuarioInfo.isHabilitado()
             ));
 
         } catch (BadCredentialsException e) {
@@ -115,17 +117,16 @@ public class AuthController {
                             "Credenciales de inicio de sesión inválidas.",
                             "/api/v1/auth/login"
                     ));
-        } catch (DisabledException e) { // <--- NUEVO BLOQUE CATCH PARA USUARIO DESHABILITADO
+        } catch (DisabledException e) {
             log.warn("Intento de login fallido: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ApiErrorResponseDTO(
                             HttpStatus.UNAUTHORIZED.value(),
                             "Usuario Deshabilitado",
-                            e.getMessage(), // Mensaje específico: "Su usuario no está habilitado..."
+                            e.getMessage(),
                             "/api/v1/auth/login"
                     ));
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error("Error durante la autenticación del usuario: {}. Error: {}", loginRequestDTO.getNombreUsuario(), e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiErrorResponseDTO(
@@ -137,15 +138,17 @@ public class AuthController {
         }
     }
 
+    /**
+     * Permite registrar un nuevo usuario en el sistema.
+     */
     @Operation(summary = "Registrar un nuevo usuario",
-            description = "Crea una nueva cuenta de usuario en el sistema. Este endpoint es público. " +
-                    "El rol por defecto y la asociación con un empleado (si aplica) se manejan en el servicio.")
+            description = "Crea una nueva cuenta de usuario. El rol y la asociación con empleado se gestionan en el servicio.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Usuario creado exitosamente.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = UsuarioResponseDTO.class))),
-            @ApiResponse(responseCode = "400", description = "Datos de registro inválidos (ej. validación fallida, empleado no encontrado si se proporciona ID).",
+            @ApiResponse(responseCode = "400", description = "Datos de registro inválidos.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class))),
-            @ApiResponse(responseCode = "409", description = "Conflicto, el nombre de usuario ya existe o el empleado (si se proporciona ID) ya está asociado a otro usuario.",
+            @ApiResponse(responseCode = "409", description = "Conflicto, usuario o empleado ya existen.",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = ApiErrorResponseDTO.class)))
     })
     @PostMapping("/register")

@@ -1,60 +1,75 @@
 package com.crmtech360.crmtech360_backend.dto;
 
-import io.swagger.v3.oas.annotations.media.Schema; // Importar @Schema
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 
-@Schema(description = "DTO para la solicitud de creación o actualización de un cliente.")
+/**
+ * DTO para recibir los datos necesarios al crear o actualizar un cliente.
+ * Incluye validaciones para asegurar la integridad de la información.
+ */
+@Schema(description = "Datos requeridos para crear o actualizar un cliente.")
 public class ClienteRequestDTO {
 
-    @Schema(description = "Tipo de documento de identificación del cliente. Valores permitidos: 'NIT' o 'Cédula'.",
-            example = "NIT",
-            requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(
+        description = "Tipo de documento de identificación del cliente. Solo se permite 'NIT' o 'Cédula'.",
+        example = "NIT",
+        requiredMode = Schema.RequiredMode.REQUIRED
+    )
     @NotBlank(message = "El tipo de documento no puede estar vacío.")
     @Pattern(regexp = "NIT|Cédula", message = "El tipo de documento debe ser NIT o Cédula.")
     private String tipoDocumento;
 
-    @Schema(description = "Número único del documento de identificación del cliente. Debe ser único en el sistema.",
-            example = "900123456-7",
-            requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(
+        description = "Número del documento de identificación del cliente.",
+        example = "900123456-7",
+        requiredMode = Schema.RequiredMode.REQUIRED
+    )
     @NotBlank(message = "El número de documento no puede estar vacío.")
     @Size(max = 20, message = "El número de documento no puede exceder los 20 caracteres.")
     private String numeroDocumento;
 
-    @Schema(description = "Nombre completo o razón social del cliente.",
-            example = "Telas del Pacífico S.A.S.",
-            requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(
+        description = "Nombre completo o razón social del cliente.",
+        example = "Telas del Pacífico S.A.S.",
+        requiredMode = Schema.RequiredMode.REQUIRED
+    )
     @NotBlank(message = "El nombre del cliente no puede estar vacío.")
     @Size(max = 255, message = "El nombre del cliente no puede exceder los 255 caracteres.")
     private String nombreCliente;
 
-    @Schema(description = "Dirección física principal del cliente.",
-            example = "Calle 100 # 20 - 30, Bogotá D.C.",
-            requiredMode = Schema.RequiredMode.NOT_REQUIRED, // Opcional
-            nullable = true)
+    @Schema(
+        description = "Dirección principal del cliente.",
+        example = "Calle 100 # 20 - 30, Bogotá D.C.",
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+        nullable = true
+    )
     @Size(max = 255, message = "La dirección del cliente no puede exceder los 255 caracteres.")
     private String direccionCliente;
 
-    @Schema(description = "Número de teléfono de contacto principal del cliente.",
-            example = "3001234567",
-            requiredMode = Schema.RequiredMode.NOT_REQUIRED, // Opcional
-            nullable = true)
+    @Schema(
+        description = "Teléfono de contacto del cliente.",
+        example = "3001234567",
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+        nullable = true
+    )
     @Size(max = 20, message = "El teléfono del cliente no puede exceder los 20 caracteres.")
     private String telefonoCliente;
 
-    @Schema(description = "Correo electrónico de contacto principal del cliente. Debe ser un formato de email válido.",
-            example = "contacto@telasdelpacifico.com",
-            requiredMode = Schema.RequiredMode.NOT_REQUIRED, // Opcional pero recomendado
-            nullable = true)
+    @Schema(
+        description = "Correo electrónico de contacto del cliente.",
+        example = "contacto@telasdelpacifico.com",
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+        nullable = true
+    )
     @Email(message = "El correo electrónico debe ser válido.")
     @Size(max = 100, message = "El correo del cliente no puede exceder los 100 caracteres.")
     private String correoCliente;
 
     // Constructores
-    public ClienteRequestDTO() {
-    }
+    public ClienteRequestDTO() {}
 
     public ClienteRequestDTO(String tipoDocumento, String numeroDocumento, String nombreCliente, String direccionCliente, String telefonoCliente, String correoCliente) {
         this.tipoDocumento = tipoDocumento;

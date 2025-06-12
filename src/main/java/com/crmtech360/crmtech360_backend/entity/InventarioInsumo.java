@@ -1,19 +1,20 @@
 package com.crmtech360.crmtech360_backend.entity;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal; // Importar BigDecimal
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
 
 /**
- * Entidad JPA que representa un registro de inventario de insumos en una ubicación específica.
- * Incluye el umbral mínimo de stock para alertas.
+ * Entidad que representa el inventario de un insumo en una ubicación específica.
+ * Permite controlar el stock y definir un umbral mínimo para alertas.
  */
 @Entity
-@Table(name = "inventarioinsumos", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"ubicacion_inventario", "id_insumo"})
-})
+@Table(
+    name = "inventarioinsumos",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"ubicacion_inventario", "id_insumo"})
+)
 public class InventarioInsumo {
 
     @Id
@@ -25,70 +26,73 @@ public class InventarioInsumo {
     private String ubicacionInventario;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_insumo") // ON DELETE CASCADE en la BD
+    @JoinColumn(name = "id_insumo")
     private Insumo insumo;
 
-    @Column(name = "cantidad_stock", nullable = false, precision = 10, scale = 3, columnDefinition = "DECIMAL(10,3) DEFAULT 0")
+    @Column(
+        name = "cantidad_stock",
+        nullable = false,
+        precision = 10,
+        scale = 3,
+        columnDefinition = "DECIMAL(10,3) DEFAULT 0"
+    )
     private BigDecimal cantidadStock;
 
-    @Column(name = "ultima_actualizacion", columnDefinition = "TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP")
+    @Column(
+        name = "ultima_actualizacion",
+        columnDefinition = "TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP"
+    )
     private LocalDateTime ultimaActualizacion;
 
-    // Nuevo campo para el umbral mínimo de stock
-    @Column(name = "umbral_minimo_stock", nullable = false, precision = 10, scale = 3, columnDefinition = "DECIMAL(10,3) DEFAULT 0")
+    @Column(
+        name = "umbral_minimo_stock",
+        nullable = false,
+        precision = 10,
+        scale = 3,
+        columnDefinition = "DECIMAL(10,3) DEFAULT 0"
+    )
     private BigDecimal umbralMinimoStock;
 
-    @OneToMany(mappedBy = "inventarioInsumo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(
+        mappedBy = "inventarioInsumo",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true,
+        fetch = FetchType.LAZY
+    )
     private Set<MovimientoInventarioInsumo> movimientosInventarioInsumo;
 
-    /**
-     * Constructor por defecto. Inicializa la cantidad de stock y el umbral mínimo a cero.
-     */
     public InventarioInsumo() {
         this.cantidadStock = BigDecimal.ZERO;
-        this.umbralMinimoStock = BigDecimal.ZERO; // Inicializar nuevo campo
+        this.umbralMinimoStock = BigDecimal.ZERO;
     }
 
-    /**
-     * Constructor para crear una nueva instancia de InventarioInsumo.
-     *
-     * @param ubicacionInventario La ubicación del inventario.
-     * @param insumo El insumo asociado a este registro de inventario.
-     * @param cantidadStock La cantidad inicial de stock.
-     * @param umbralMinimoStock El umbral mínimo de stock para el insumo en esta ubicación.
-     */
-    public InventarioInsumo(String ubicacionInventario, Insumo insumo, BigDecimal cantidadStock, BigDecimal umbralMinimoStock) {
+    public InventarioInsumo(
+        String ubicacionInventario,
+        Insumo insumo,
+        BigDecimal cantidadStock,
+        BigDecimal umbralMinimoStock
+    ) {
         this.ubicacionInventario = ubicacionInventario;
         this.insumo = insumo;
         this.cantidadStock = (cantidadStock != null) ? cantidadStock : BigDecimal.ZERO;
-        this.umbralMinimoStock = (umbralMinimoStock != null) ? umbralMinimoStock : BigDecimal.ZERO; // Asignar nuevo campo
+        this.umbralMinimoStock = (umbralMinimoStock != null) ? umbralMinimoStock : BigDecimal.ZERO;
     }
 
-    /**
-     * Método que se ejecuta antes de persistir la entidad.
-     * Establece la fecha de creación y asegura valores por defecto para stock y umbral.
-     */
     @PrePersist
     protected void onCreate() {
         ultimaActualizacion = LocalDateTime.now();
         if (this.cantidadStock == null) {
             this.cantidadStock = BigDecimal.ZERO;
         }
-        if (this.umbralMinimoStock == null) { // Asegurar valor por defecto
+        if (this.umbralMinimoStock == null) {
             this.umbralMinimoStock = BigDecimal.ZERO;
         }
     }
 
-    /**
-     * Método que se ejecuta antes de actualizar la entidad.
-     * Actualiza la fecha de última actualización.
-     */
     @PreUpdate
     protected void onUpdate() {
         ultimaActualizacion = LocalDateTime.now();
     }
-
-    // Getters y Setters
 
     public Integer getIdInventarioInsumo() {
         return idInventarioInsumo;
@@ -147,10 +151,7 @@ public class InventarioInsumo {
     }
 
     /**
-     * Compara dos objetos InventarioInsumo por su ID o por la combinación de ubicación e insumo.
-     *
-     * @param o El objeto a comparar.
-     * @return true si los objetos son iguales, false en caso contrario.
+     * Dos inventarios son iguales si tienen el mismo ID o la misma combinación de ubicación e insumo.
      */
     @Override
     public boolean equals(Object o) {
@@ -160,40 +161,28 @@ public class InventarioInsumo {
         if (idInventarioInsumo != null) {
             return idInventarioInsumo.equals(that.idInventarioInsumo);
         }
-        // Si el ID no está, comparar por la combinación única de negocio
-        return Objects.equals(ubicacionInventario, that.ubicacionInventario) &&
-                Objects.equals(insumo, that.insumo) &&
-                Objects.equals(umbralMinimoStock, that.umbralMinimoStock); // Incluir nuevo campo
+        return Objects.equals(ubicacionInventario, that.ubicacionInventario)
+            && Objects.equals(insumo, that.insumo)
+            && Objects.equals(umbralMinimoStock, that.umbralMinimoStock);
     }
 
-    /**
-     * Genera un código hash para el objeto InventarioInsumo.
-     *
-     * @return El código hash.
-     */
     @Override
     public int hashCode() {
         if (idInventarioInsumo != null) {
             return Objects.hash(idInventarioInsumo);
         }
-        return Objects.hash(ubicacionInventario, insumo, umbralMinimoStock); // Incluir nuevo campo
+        return Objects.hash(ubicacionInventario, insumo, umbralMinimoStock);
     }
 
-    /**
-     * Representación en cadena del objeto InventarioInsumo.
-     *
-     * @return La cadena de representación.
-     */
     @Override
     public String toString() {
         return "InventarioInsumo{" +
-                "idInventarioInsumo=" + idInventarioInsumo +
-                ", ubicacionInventario='" + ubicacionInventario + '\'' +
-                ", insumoId=" + (insumo != null ? insumo.getIdInsumo() : "null") +
-                ", cantidadStock=" + cantidadStock +
-                ", umbralMinimoStock=" + umbralMinimoStock + // Incluir nuevo campo
-                ", ultimaActualizacion=" + ultimaActualizacion +
-                '}';
+            "idInventarioInsumo=" + idInventarioInsumo +
+            ", ubicacionInventario='" + ubicacionInventario + '\'' +
+            ", insumoId=" + (insumo != null ? insumo.getIdInsumo() : "null") +
+            ", cantidadStock=" + cantidadStock +
+            ", umbralMinimoStock=" + umbralMinimoStock +
+            ", ultimaActualizacion=" + ultimaActualizacion +
+            '}';
     }
 }
-

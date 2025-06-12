@@ -6,6 +6,10 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Entidad que representa una orden de producción.
+ * Incluye la relación con la orden de venta, fechas clave, estado y tareas asociadas.
+ */
 @Entity
 @Table(name = "ordenesproduccion")
 public class OrdenProduccion {
@@ -16,7 +20,7 @@ public class OrdenProduccion {
     private Integer idOrdenProduccion;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_orden_venta") // ON DELETE SET NULL en la BD
+    @JoinColumn(name = "id_orden_venta")
     private OrdenVenta ordenVenta;
 
     @Column(name = "fecha_creacion", columnDefinition = "TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP", updatable = false)
@@ -32,7 +36,7 @@ public class OrdenProduccion {
     private LocalDate fechaFinRealProduccion;
 
     @Column(name = "estado_produccion", nullable = false, length = 20)
-    private String estadoProduccion; // 'Pendiente', 'En Proceso', 'Terminada', 'Retrasada', 'Anulada'
+    private String estadoProduccion;
 
     @Column(name = "observaciones_produccion", columnDefinition = "TEXT")
     private String observacionesProduccion;
@@ -43,7 +47,6 @@ public class OrdenProduccion {
     @OneToMany(mappedBy = "ordenProduccion", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<TareaProduccion> tareasProduccion;
 
-    // Constructores
     public OrdenProduccion() {
     }
 
@@ -67,7 +70,6 @@ public class OrdenProduccion {
         fechaActualizacion = LocalDateTime.now();
     }
 
-    // Getters y Setters
     public Integer getIdOrdenProduccion() {
         return idOrdenProduccion;
     }
@@ -148,7 +150,9 @@ public class OrdenProduccion {
         this.tareasProduccion = tareasProduccion;
     }
 
-    // equals y hashCode
+    /**
+     * Dos órdenes de producción son iguales si tienen el mismo ID.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -162,7 +166,6 @@ public class OrdenProduccion {
         return Objects.hash(idOrdenProduccion);
     }
 
-    // toString
     @Override
     public String toString() {
         return "OrdenProduccion{" +

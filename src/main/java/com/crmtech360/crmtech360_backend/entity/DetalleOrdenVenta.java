@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.Objects;
 
+/**
+ * Entidad que representa el detalle de una orden de venta.
+ * Incluye el producto vendido, la cantidad, el precio unitario y el subtotal.
+ */
 @Entity
 @Table(name = "detallesordenventa")
 public class DetalleOrdenVenta {
@@ -14,11 +18,11 @@ public class DetalleOrdenVenta {
     private Integer idDetalleOrden;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_orden_venta", nullable = false) // ON DELETE CASCADE es manejado por la BD.
+    @JoinColumn(name = "id_orden_venta", nullable = false)
     private OrdenVenta ordenVenta;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_producto", nullable = false) // ON DELETE CASCADE es manejado por la BD.
+    @JoinColumn(name = "id_producto", nullable = false)
     private Producto producto;
 
     @Column(name = "cantidad_producto", nullable = false)
@@ -30,7 +34,6 @@ public class DetalleOrdenVenta {
     @Column(name = "subtotal_detalle", nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotalDetalle;
 
-    // Constructores
     public DetalleOrdenVenta() {
     }
 
@@ -42,7 +45,6 @@ public class DetalleOrdenVenta {
         this.subtotalDetalle = subtotalDetalle;
     }
 
-    // Getters y Setters
     public Integer getIdDetalleOrden() {
         return idDetalleOrden;
     }
@@ -91,7 +93,9 @@ public class DetalleOrdenVenta {
         this.subtotalDetalle = subtotalDetalle;
     }
 
-    // equals y hashCode
+    /**
+     * Dos detalles son iguales si tienen el mismo ID.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -105,7 +109,6 @@ public class DetalleOrdenVenta {
         return Objects.hash(idDetalleOrden);
     }
 
-    // toString
     @Override
     public String toString() {
         return "DetalleOrdenVenta{" +
@@ -114,6 +117,7 @@ public class DetalleOrdenVenta {
                 ", productoId=" + (producto != null ? producto.getIdProducto() : "null") +
                 ", cantidadProducto=" + cantidadProducto +
                 ", precioUnitarioVenta=" + precioUnitarioVenta +
+                ", subtotalDetalle=" + subtotalDetalle +
                 '}';
     }
 }

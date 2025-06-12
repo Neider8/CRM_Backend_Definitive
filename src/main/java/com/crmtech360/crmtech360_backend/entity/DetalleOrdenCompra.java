@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.Objects;
 
+/**
+ * Representa el detalle de una orden de compra, incluyendo el insumo, cantidad y precios asociados.
+ */
 @Entity
 @Table(name = "detallesordencompra")
 public class DetalleOrdenCompra {
@@ -14,11 +17,11 @@ public class DetalleOrdenCompra {
     private Integer idDetalleCompra;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_orden_compra", nullable = false) // ON DELETE CASCADE en la BD
+    @JoinColumn(name = "id_orden_compra", nullable = false)
     private OrdenCompra ordenCompra;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_insumo", nullable = false) // ON DELETE RESTRICT en la BD
+    @JoinColumn(name = "id_insumo", nullable = false)
     private Insumo insumo;
 
     @Column(name = "cantidad_compra", nullable = false)
@@ -30,7 +33,6 @@ public class DetalleOrdenCompra {
     @Column(name = "subtotal_compra", nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotalCompra;
 
-    // Constructores
     public DetalleOrdenCompra() {
     }
 
@@ -42,7 +44,6 @@ public class DetalleOrdenCompra {
         this.subtotalCompra = subtotalCompra;
     }
 
-    // Getters y Setters
     public Integer getIdDetalleCompra() {
         return idDetalleCompra;
     }
@@ -91,7 +92,9 @@ public class DetalleOrdenCompra {
         this.subtotalCompra = subtotalCompra;
     }
 
-    // equals y hashCode
+    /**
+     * Dos detalles son iguales si tienen el mismo ID.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -105,7 +108,6 @@ public class DetalleOrdenCompra {
         return Objects.hash(idDetalleCompra);
     }
 
-    // toString
     @Override
     public String toString() {
         return "DetalleOrdenCompra{" +
@@ -114,6 +116,7 @@ public class DetalleOrdenCompra {
                 ", insumoId=" + (insumo != null ? insumo.getIdInsumo() : "null") +
                 ", cantidadCompra=" + cantidadCompra +
                 ", precioUnitarioCompra=" + precioUnitarioCompra +
+                ", subtotalCompra=" + subtotalCompra +
                 '}';
     }
 }
